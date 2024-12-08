@@ -1,0 +1,1 @@
+`enabled.txt` is a line-separated list that is read by `./script.sh` and determines the plugins that will be modified on WP instances when the script runs
