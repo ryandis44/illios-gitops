@@ -3,10 +3,31 @@
 cd $HOME/gitops && # ensure we are in the correct directory
 echo "2. Starting script via git repo..." && 
 
-# chmod 777 . && 
-# Set file permissions (primarily a post-restore step)
-# find "/var/www/html/*" -type d -exec chmod 755 {} \; && 
-# find "/var/www/html/*" -type f -exec chmod 644 {} \; && 
+# Ops for the entire WordPress directory
+echo "[*] > Starting WordPress directory ops..."
+
+# Delete files in the WordPress directory
+for file in "$HOME/gitops/wordpress/"*; do
+    target_file="/var/www/html/$(basename "$file")"
+
+    if [ -e "$target_file" ]; then
+        if [ -f "$target_file" ]; then
+            echo "[-] > Deleted $target_file"
+            rm -f "$target_file"  # Remove only files, not directories
+        fi
+
+        echo "[+] > Copying $file to $target_file"
+        cp -r "$file" "/var/www/html/"
+        chmod -R 644 "/var/www/html/$(basename "$file")"
+        echo "[*] > Permissions set for $target_file"
+    else
+        # If the target file doesn't exist, just copy it
+        echo "[+] > Copying $file to $target_file"
+        cp -r "$file" "/var/www/html/"
+        chmod -R 644 "$target_file"
+        echo "[*] > Permissions set for $target_file"
+    fi
+done
 
 # Plugin ops
 echo "[*] > Starting plugin ops..."
@@ -27,4 +48,9 @@ else
   echo "[!] > enabled.txt not found."; 
 fi;
 
-echo "3. Complete.
+echo "3. Setting file/folder permissions..."
+# Set file permissions (primarily a post-restore step)
+find "/var/www/html/*" -type d -exec chmod 755 {} \; && 
+find "/var/www/html/*" -type f -exec chmod 644 {} \; && 
+
+echo "4. Complete.
