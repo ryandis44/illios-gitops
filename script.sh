@@ -4,7 +4,7 @@ cd $HOME/gitops && # ensure we are in the correct directory
 echo "2. Starting script via git repo..." && 
 
 # Ops for the entire WordPress directory
-echo "[*] > Starting WordPress directory ops..."
+echo "3. Starting WordPress directory ops..."
 
 # Delete files in the WordPress directory
 for file in "$HOME/gitops/wordpress/"*; do
@@ -29,15 +29,20 @@ for file in "$HOME/gitops/wordpress/"*; do
     fi
 done
 
+echo "4. Setting file/folder permissions..." && 
+# Set file permissions (primarily a post-restore step); intentionally done before plugins so they have their own permissions
+find "/var/www/html/*" -type d -exec chmod 755 {} \; && 
+find "/var/www/html/*" -type f -exec chmod 644 {} \; && 
+
 # Plugin ops
-echo "[*] > Starting plugin ops..."
+echo "5. Starting plugin ops..." && 
 if [ -f plugins/enabled.txt ]; then 
   while IFS= read -r f || [ -n "$f" ]; do # IFS= sets whitespace to newline. || [ -n "$f" ] prevents the last line from being ignored.
     if [ -d "/var/www/html/wp-content/plugins/$f" ]; then 
       echo "[-] > Deleted /var/www/html/wp-content/plugins/$f" && rm -rf "/var/www/html/wp-content/plugins/$f"; 
     fi; 
-    if [ -d "$HOME/gitops/$f" ]; then 
-      echo "[+] > Copied $HOME/gitops/$f to /var/www/html/wp-content/plugins/$f" && cp -r "$HOME/gitops/$f" "/var/www/html/wp-content/plugins/" && 
+    if [ -d "plugins/$f" ]; then 
+      echo "[+] > Copied plugins/$f to /var/www/html/wp-content/plugins/$f" && cp -r "plugins/$f" "/var/www/html/wp-content/plugins/" && 
       chown -R 0:0 "/var/www/html/wp-content/plugins/$f" && 
       chmod -R 555 "/var/www/html/wp-content/plugins/$f" && 
       echo "[*] > Permissions set for /var/www/html/wp-content/plugins/$f";
@@ -48,9 +53,5 @@ else
   echo "[!] > enabled.txt not found."; 
 fi;
 
-echo "3. Setting file/folder permissions..."
-# Set file permissions (primarily a post-restore step)
-find "/var/www/html/*" -type d -exec chmod 755 {} \; && 
-find "/var/www/html/*" -type f -exec chmod 644 {} \; && 
 
-echo "4. Complete.
+echo "6. Complete."
