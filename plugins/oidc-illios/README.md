@@ -51,6 +51,11 @@ On the settings page for this plugin (Dashboard > Settings > OpenID Connect Gene
 
 ## Changelog ##
 
+### 3.10.0 | IDSSO v1.0 ###
+* Feature: @ryandis44 - Adds role mapping for Keycloak to WordPress
+* Feature: @ryandis44 - Hides plugin from plugin list for non-Super Administrators
+* Feature: @ryandis44 - Prevents deactivation of plugin for non-Super Administrators
+
 ### 3.10.0 ###
 
 * Chore: @timnolte - Dependency updates.

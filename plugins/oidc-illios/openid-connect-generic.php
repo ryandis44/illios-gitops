@@ -13,19 +13,19 @@
  * @link      https://github.com/daggerhart
  *
  * @wordpress-plugin
- * Plugin Name:       OpenID Connect Generic
- * Plugin URI:        https://github.com/daggerhart/openid-connect-generic
- * Description:       Connect to an OpenID Connect identity provider using Authorization Code Flow.
- * Version:           3.10.0
+ * Plugin Name:       Illios Digital LLC SSO
+ * Plugin URI:        https://github.com/ryandis44/illios-wordpress-public
+ * Description:       Authorize users using Keycloak and map roles to WordPress
+ * Version:           3.10.0 | IDSSO v1.0
  * Requires at least: 5.0
  * Requires PHP:      7.4
- * Author:            daggerhart
- * Author URI:        http://www.daggerhart.com
+ * Author:            daggerhart (Modified by Illios Digital LLC)
+ * Author URI:        https://github.com/ryandis44/illios-wordpress-public
  * Text Domain:       daggerhart-openid-connect-generic
  * Domain Path:       /languages
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
- * GitHub Plugin URI: https://github.com/daggerhart/openid-connect-generic
+ * GitHub Plugin URI: https://github.com/ryandis44/illios-wordpress-public
  */
 
 /*
@@ -369,8 +369,8 @@ class OpenID_Connect_Generic {
 				'login_type'           => defined( 'OIDC_LOGIN_TYPE' ) ? OIDC_LOGIN_TYPE : 'button',
 				'client_id'            => defined( 'OIDC_CLIENT_ID' ) ? OIDC_CLIENT_ID : '',
 				'client_secret'        => defined( 'OIDC_CLIENT_SECRET' ) ? OIDC_CLIENT_SECRET : '',
-				'scope'                => defined( 'OIDC_CLIENT_SCOPE' ) ? OIDC_CLIENT_SCOPE : '',
-				'endpoint_login'       => defined( 'OIDC_ENDPOINT_LOGIN_URL' ) ? OIDC_ENDPOINT_LOGIN_URL : '',
+				'scope'                => defined( 'OIDC_CLIENT_SCOPE' ) ? OIDC_CLIENT_SCOPE : 'openid email profile',
+				'endpoint_login'       => defined( 'OIDC_ENDPOINT_LOGIN_URL' ) ? OIDC_ENDPOINT_LOGIN_URL : 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/auth',
 				'endpoint_userinfo'    => defined( 'OIDC_ENDPOINT_USERINFO_URL' ) ? OIDC_ENDPOINT_USERINFO_URL : '',
 				'endpoint_token'       => defined( 'OIDC_ENDPOINT_TOKEN_URL' ) ? OIDC_ENDPOINT_TOKEN_URL : '',
 				'endpoint_end_session' => defined( 'OIDC_ENDPOINT_LOGOUT_URL' ) ? OIDC_ENDPOINT_LOGOUT_URL : '',
@@ -379,10 +379,10 @@ class OpenID_Connect_Generic {
 				// Non-standard settings.
 				'no_sslverify'           => 0,
 				'http_request_timeout'   => 5,
-				'identity_key'           => 'preferred_username',
-				'nickname_key'           => 'preferred_username',
+				'identity_key'           => 'sub',
+				'nickname_key'           => 'name',
 				'email_format'           => '{email}',
-				'displayname_format'     => '',
+				'displayname_format'     => '{given_name}',
 				'identify_with_username' => false,
 				'state_time_limit'       => 180,
 
@@ -390,7 +390,7 @@ class OpenID_Connect_Generic {
 				'enforce_privacy'          => defined( 'OIDC_ENFORCE_PRIVACY' ) ? intval( OIDC_ENFORCE_PRIVACY ) : 0,
 				'alternate_redirect_uri'   => 0,
 				'token_refresh_enable'     => 1,
-				'link_existing_users'      => defined( 'OIDC_LINK_EXISTING_USERS' ) ? intval( OIDC_LINK_EXISTING_USERS ) : 0,
+				'link_existing_users'      => defined( 'OIDC_LINK_EXISTING_USERS' ) ? intval( OIDC_LINK_EXISTING_USERS ) : 1,
 				'create_if_does_not_exist' => defined( 'OIDC_CREATE_IF_DOES_NOT_EXIST' ) ? intval( OIDC_CREATE_IF_DOES_NOT_EXIST ) : 1,
 				'redirect_user_back'       => defined( 'OIDC_REDIRECT_USER_BACK' ) ? intval( OIDC_REDIRECT_USER_BACK ) : 0,
 				'redirect_on_logout'       => defined( 'OIDC_REDIRECT_ON_LOGOUT' ) ? intval( OIDC_REDIRECT_ON_LOGOUT ) : 1,
@@ -432,3 +432,4 @@ register_deactivation_hook( __FILE__, array( 'OpenID_Connect_Generic', 'deactiva
 
 // Provide publicly accessible plugin helper functions.
 require_once 'includes/functions.php';
+include_once 'includes/keycloak-role-mapping.php';

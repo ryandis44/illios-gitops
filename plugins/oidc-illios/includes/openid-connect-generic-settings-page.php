@@ -105,7 +105,7 @@ class OpenID_Connect_Generic_Settings_Page {
 	 */
 	public function admin_menu() {
 		add_options_page(
-			__( 'OpenID Connect - Generic Client', 'daggerhart-openid-connect-generic' ),
+			__( 'Illios Digital LLC — OpenID Client for Keycloak', 'daggerhart-openid-connect-generic' ),
 			__( 'OpenID Connect Client', 'daggerhart-openid-connect-generic' ),
 			'manage_options',
 			$this->options_page_name,
@@ -130,29 +130,8 @@ class OpenID_Connect_Generic_Settings_Page {
 
 		add_settings_section(
 			'client_settings',
-			__( 'Client Settings', 'daggerhart-openid-connect-generic' ),
+			__( 'Login Settings', 'daggerhart-openid-connect-generic' ),
 			array( $this, 'client_settings_description' ),
-			$this->options_page_name
-		);
-
-		add_settings_section(
-			'user_settings',
-			__( 'WordPress User Settings', 'daggerhart-openid-connect-generic' ),
-			array( $this, 'user_settings_description' ),
-			$this->options_page_name
-		);
-
-		add_settings_section(
-			'authorization_settings',
-			__( 'Authorization Settings', 'daggerhart-openid-connect-generic' ),
-			array( $this, 'authorization_settings_description' ),
-			$this->options_page_name
-		);
-
-		add_settings_section(
-			'log_settings',
-			__( 'Log Settings', 'daggerhart-openid-connect-generic' ),
-			array( $this, 'log_settings_description' ),
 			$this->options_page_name
 		);
 
@@ -274,128 +253,128 @@ class OpenID_Connect_Generic_Settings_Page {
 				'disabled'    => defined( 'OIDC_ENDPOINT_LOGOUT_URL' ),
 				'section'     => 'client_settings',
 			),
-			'acr_values'    => array(
-				'title'       => __( 'ACR values', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Use a specific defined authentication contract from the IDP - optional.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'text',
-				'disabled'    => defined( 'OIDC_ACR_VALUES' ),
-				'section'     => 'client_settings',
-			),
-			'identity_key'     => array(
-				'title'       => __( 'Identity Key', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Where in the user claim array to find the user\'s identification data. Possible standard values: preferred_username, name, or sub. If you\'re having trouble, use "sub".', 'daggerhart-openid-connect-generic' ),
-				'example'     => 'preferred_username',
-				'type'        => 'text',
-				'section'     => 'client_settings',
-			),
-			'no_sslverify'      => array(
-				'title'       => __( 'Disable SSL Verify', 'daggerhart-openid-connect-generic' ),
-				// translators: %1$s HTML tags for layout/styles, %2$s closing HTML tag for styles.
-				'description' => sprintf( __( 'Do not require SSL verification during authorization. The OAuth extension uses curl to make the request. By default CURL will generally verify the SSL certificate to see if its valid an issued by an accepted CA. This setting disabled that verification.%1$sNot recommended for production sites.%2$s', 'daggerhart-openid-connect-generic' ), '<br><strong>', '</strong>' ),
-				'type'        => 'checkbox',
-				'section'     => 'client_settings',
-			),
-			'http_request_timeout'      => array(
-				'title'       => __( 'HTTP Request Timeout', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Set the timeout for requests made to the IDP. Default value is 5.', 'daggerhart-openid-connect-generic' ),
-				'example'     => 30,
-				'type'        => 'text',
-				'section'     => 'client_settings',
-			),
+			// 'acr_values'    => array(
+			// 	'title'       => __( 'ACR values', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Use a specific defined authentication contract from the IDP - optional.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'text',
+			// 	'disabled'    => defined( 'OIDC_ACR_VALUES' ),
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'identity_key'     => array(
+			// 	'title'       => __( 'Identity Key', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Where in the user claim array to find the user\'s identification data. Possible standard values: preferred_username, name, or sub. If you\'re having trouble, use "sub".', 'daggerhart-openid-connect-generic' ),
+			// 	'example'     => 'preferred_username',
+			// 	'type'        => 'text',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'no_sslverify'      => array(
+			// 	'title'       => __( 'Disable SSL Verify', 'daggerhart-openid-connect-generic' ),
+			// 	// translators: %1$s HTML tags for layout/styles, %2$s closing HTML tag for styles.
+			// 	'description' => sprintf( __( 'Do not require SSL verification during authorization. The OAuth extension uses curl to make the request. By default CURL will generally verify the SSL certificate to see if its valid an issued by an accepted CA. This setting disabled that verification.%1$sNot recommended for production sites.%2$s', 'daggerhart-openid-connect-generic' ), '<br><strong>', '</strong>' ),
+			// 	'type'        => 'checkbox',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'http_request_timeout'      => array(
+			// 	'title'       => __( 'HTTP Request Timeout', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Set the timeout for requests made to the IDP. Default value is 5.', 'daggerhart-openid-connect-generic' ),
+			// 	'example'     => 30,
+			// 	'type'        => 'text',
+			// 	'section'     => 'client_settings',
+			// ),
 			'enforce_privacy'   => array(
 				'title'       => __( 'Enforce Privacy', 'daggerhart-openid-connect-generic' ),
 				'description' => __( 'Require users be logged in to see the site.', 'daggerhart-openid-connect-generic' ),
 				'type'        => 'checkbox',
 				'disabled'    => defined( 'OIDC_ENFORCE_PRIVACY' ),
-				'section'     => 'authorization_settings',
-			),
-			'alternate_redirect_uri'   => array(
-				'title'       => __( 'Alternate Redirect URI', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Provide an alternative redirect route. Useful if your server is causing issues with the default admin-ajax method. You must flush rewrite rules after changing this setting. This can be done by saving the Permalinks settings page.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'section'     => 'authorization_settings',
-			),
-			'nickname_key'     => array(
-				'title'       => __( 'Nickname Key', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Where in the user claim array to find the user\'s nickname. Possible standard values: preferred_username, name, or sub.', 'daggerhart-openid-connect-generic' ),
-				'example'     => 'preferred_username',
-				'type'        => 'text',
 				'section'     => 'client_settings',
 			),
-			'email_format'     => array(
-				'title'       => __( 'Email Formatting', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'String from which the user\'s email address is built. Specify "{email}" as long as the user claim contains an email claim.', 'daggerhart-openid-connect-generic' ),
-				'example'     => '{email}',
-				'type'        => 'text',
-				'section'     => 'client_settings',
-			),
-			'displayname_format'     => array(
-				'title'       => __( 'Display Name Formatting', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'String from which the user\'s display name is built.', 'daggerhart-openid-connect-generic' ),
-				'example'     => '{given_name} {family_name}',
-				'type'        => 'text',
-				'section'     => 'client_settings',
-			),
-			'identify_with_username'     => array(
-				'title'       => __( 'Identify with User Name', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'If checked, the user\'s identity will be determined by the user name instead of the email address.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'section'     => 'client_settings',
-			),
-			'state_time_limit'     => array(
-				'title'       => __( 'State time limit', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'State valid time in seconds. Defaults to 180', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'number',
-				'section'     => 'client_settings',
-			),
-			'token_refresh_enable'   => array(
-				'title'       => __( 'Enable Refresh Token', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'If checked, support refresh tokens used to obtain access tokens from supported IDPs.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'section'     => 'client_settings',
-			),
-			'link_existing_users'   => array(
-				'title'       => __( 'Link Existing Users', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'If a WordPress account already exists with the same identity as a newly-authenticated user over OpenID Connect, login as that user instead of generating an error.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'disabled'    => defined( 'OIDC_LINK_EXISTING_USERS' ),
-				'section'     => 'user_settings',
-			),
-			'create_if_does_not_exist'   => array(
-				'title'       => __( 'Create user if does not exist', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'If the user identity is not linked to an existing WordPress user, it is created. If this setting is not enabled, and if the user authenticates with an account which is not linked to an existing WordPress user, then the authentication will fail.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'disabled'    => defined( 'OIDC_CREATE_IF_DOES_NOT_EXIST' ),
-				'section'     => 'user_settings',
-			),
+			// 'alternate_redirect_uri'   => array(
+			// 	'title'       => __( 'Alternate Redirect URI', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Provide an alternative redirect route. Useful if your server is causing issues with the default admin-ajax method. You must flush rewrite rules after changing this setting. This can be done by saving the Permalinks settings page.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'section'     => 'authorization_settings',
+			// ),
+			// 'nickname_key'     => array(
+			// 	'title'       => __( 'Nickname Key', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Where in the user claim array to find the user\'s nickname. Possible standard values: preferred_username, name, or sub.', 'daggerhart-openid-connect-generic' ),
+			// 	'example'     => 'preferred_username',
+			// 	'type'        => 'text',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'email_format'     => array(
+			// 	'title'       => __( 'Email Formatting', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'String from which the user\'s email address is built. Specify "{email}" as long as the user claim contains an email claim.', 'daggerhart-openid-connect-generic' ),
+			// 	'example'     => '{email}',
+			// 	'type'        => 'text',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'displayname_format'     => array(
+			// 	'title'       => __( 'Display Name Formatting', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'String from which the user\'s display name is built.', 'daggerhart-openid-connect-generic' ),
+			// 	'example'     => '{given_name} {family_name}',
+			// 	'type'        => 'text',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'identify_with_username'     => array(
+			// 	'title'       => __( 'Identify with User Name', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'If checked, the user\'s identity will be determined by the user name instead of the email address.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'state_time_limit'     => array(
+			// 	'title'       => __( 'State time limit', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'State valid time in seconds. Defaults to 180', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'number',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'token_refresh_enable'   => array(
+			// 	'title'       => __( 'Enable Refresh Token', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'If checked, support refresh tokens used to obtain access tokens from supported IDPs.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'section'     => 'client_settings',
+			// ),
+			// 'link_existing_users'   => array(
+			// 	'title'       => __( 'Link Existing Users', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'If a WordPress account already exists with the same identity as a newly-authenticated user over OpenID Connect, login as that user instead of generating an error.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'disabled'    => defined( 'OIDC_LINK_EXISTING_USERS' ),
+			// 	'section'     => 'user_settings',
+			// ),
+			// 'create_if_does_not_exist'   => array(
+			// 	'title'       => __( 'Create user if does not exist', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'If the user identity is not linked to an existing WordPress user, it is created. If this setting is not enabled, and if the user authenticates with an account which is not linked to an existing WordPress user, then the authentication will fail.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'disabled'    => defined( 'OIDC_CREATE_IF_DOES_NOT_EXIST' ),
+			// 	'section'     => 'user_settings',
+			// ),
 			'redirect_user_back'   => array(
 				'title'       => __( 'Redirect Back to Origin Page', 'daggerhart-openid-connect-generic' ),
 				'description' => __( 'After a successful OpenID Connect authentication, this will redirect the user back to the page on which they clicked the OpenID Connect login button. This will cause the login process to proceed in a traditional WordPress fashion. For example, users logging in through the default wp-login.php page would end up on the WordPress Dashboard and users logging in through the WooCommerce "My Account" page would end up on their account page.', 'daggerhart-openid-connect-generic' ),
 				'type'        => 'checkbox',
 				'disabled'    => defined( 'OIDC_REDIRECT_USER_BACK' ),
-				'section'     => 'user_settings',
+				'section'     => 'client_settings',
 			),
-			'redirect_on_logout'   => array(
-				'title'       => __( 'Redirect to the login screen when session is expired', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'When enabled, this will automatically redirect the user back to the WordPress login page if their access token has expired.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'disabled'    => defined( 'OIDC_REDIRECT_ON_LOGOUT' ),
-				'section'     => 'user_settings',
-			),
-			'enable_logging'    => array(
-				'title'       => __( 'Enable Logging', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Very simple log messages for debugging purposes.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'checkbox',
-				'disabled'    => defined( 'OIDC_ENABLE_LOGGING' ),
-				'section'     => 'log_settings',
-			),
-			'log_limit'         => array(
-				'title'       => __( 'Log Limit', 'daggerhart-openid-connect-generic' ),
-				'description' => __( 'Number of items to keep in the log. These logs are stored as an option in the database, so space is limited.', 'daggerhart-openid-connect-generic' ),
-				'type'        => 'number',
-				'disabled'    => defined( 'OIDC_LOG_LIMIT' ),
-				'section'     => 'log_settings',
-			),
+			// 'redirect_on_logout'   => array(
+			// 	'title'       => __( 'Redirect to the login screen when session is expired', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'When enabled, this will automatically redirect the user back to the WordPress login page if their access token has expired.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'disabled'    => defined( 'OIDC_REDIRECT_ON_LOGOUT' ),
+			// 	'section'     => 'user_settings',
+			// ),
+			// 'enable_logging'    => array(
+			// 	'title'       => __( 'Enable Logging', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Very simple log messages for debugging purposes.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'checkbox',
+			// 	'disabled'    => defined( 'OIDC_ENABLE_LOGGING' ),
+			// 	'section'     => 'log_settings',
+			// ),
+			// 'log_limit'         => array(
+			// 	'title'       => __( 'Log Limit', 'daggerhart-openid-connect-generic' ),
+			// 	'description' => __( 'Number of items to keep in the log. These logs are stored as an option in the database, so space is limited.', 'daggerhart-openid-connect-generic' ),
+			// 	'type'        => 'number',
+			// 	'disabled'    => defined( 'OIDC_LOG_LIMIT' ),
+			// 	'section'     => 'log_settings',
+			// ),
 		);
 
 		return apply_filters( 'openid-connect-generic-settings-fields', $fields );
@@ -571,7 +550,7 @@ class OpenID_Connect_Generic_Settings_Page {
 	 * @return void
 	 */
 	public function client_settings_description() {
-		esc_html_e( 'Enter your OpenID Connect identity provider settings.', 'daggerhart-openid-connect-generic' );
+		esc_html_e( 'Miscellaneous login settings.', 'daggerhart-openid-connect-generic' );
 	}
 
 	/**
