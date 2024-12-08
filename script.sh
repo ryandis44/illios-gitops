@@ -48,7 +48,7 @@ if [ -f "$HOME/gitops/plugins/enabled.txt" ]; then
       chmod -R 555 "/var/www/html/wp-content/plugins/$f" && 
       echo "[*] > Permissions set for /var/www/html/wp-content/plugins/$f";
     fi; 
-  done < enabled.txt; 
+  done < "$HOME/gitops/plugins/enabled.txt"; 
   echo "[*] > Plugin ops complete.";
 else 
   echo "[!] > enabled.txt not found."; 
