@@ -75,14 +75,14 @@ define( 'DB_COLLATE', getenv_docker('WORDPRESS_DB_COLLATE', '') );
  *
  * @since 2.6.0
  */
-define( 'AUTH_KEY',         getenv_docker('WORDPRESS_AUTH_KEY',) );
-define( 'SECURE_AUTH_KEY',  getenv_docker('WORDPRESS_SECURE_AUTH_KEY',) );
-define( 'LOGGED_IN_KEY',    getenv_docker('WORDPRESS_LOGGED_IN_KEY',) );
-define( 'NONCE_KEY',        getenv_docker('WORDPRESS_NONCE_KEY',) );
-define( 'AUTH_SALT',        getenv_docker('WORDPRESS_AUTH_SALT',) );
-define( 'SECURE_AUTH_SALT', getenv_docker('WORDPRESS_SECURE_AUTH_SALT',) );
-define( 'LOGGED_IN_SALT',   getenv_docker('WORDPRESS_LOGGED_IN_SALT',) );
-define( 'NONCE_SALT',       getenv_docker('WORDPRESS_NONCE_SALT',) );
+define( 'AUTH_KEY',         getenv_docker('WORDPRESS_AUTH_KEY',         '') );
+define( 'SECURE_AUTH_KEY',  getenv_docker('WORDPRESS_SECURE_AUTH_KEY',  '') );
+define( 'LOGGED_IN_KEY',    getenv_docker('WORDPRESS_LOGGED_IN_KEY',    '') );
+define( 'NONCE_KEY',        getenv_docker('WORDPRESS_NONCE_KEY',        '') );
+define( 'AUTH_SALT',        getenv_docker('WORDPRESS_AUTH_SALT',        '') );
+define( 'SECURE_AUTH_SALT', getenv_docker('WORDPRESS_SECURE_AUTH_SALT', '') );
+define( 'LOGGED_IN_SALT',   getenv_docker('WORDPRESS_LOGGED_IN_SALT',   '') );
+define( 'NONCE_SALT',       getenv_docker('WORDPRESS_NONCE_SALT',       '') );
 // (See also https://wordpress.stackexchange.com/a/152905/199287)
 
 /**#@-*/
