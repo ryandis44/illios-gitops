@@ -187,17 +187,17 @@ class OpenID_Connect_Generic_Settings_Page {
 		 * - example (optional example will appear beneath description and be wrapped in <code>)
 		 */
 		$fields = array(
-			// 'login_type'        => array(
-			// 	'title'       => __( 'Login Type', 'daggerhart-openid-connect-generic' ),
-			// 	'description' => __( 'Select how the client (login form) should provide login options.', 'daggerhart-openid-connect-generic' ),
-			// 	'type'        => 'select',
-			// 	'options'     => array(
-			// 		'button' => __( 'OpenID Connect button on login form', 'daggerhart-openid-connect-generic' ),
-			// 		'auto'   => __( 'Auto Login - SSO', 'daggerhart-openid-connect-generic' ),
-			// 	),
-			// 	'disabled'    => defined( 'OIDC_LOGIN_TYPE' ),
-			// 	'section'     => 'client_settings',
-			// ),
+			'login_type'        => array(
+				'title'       => __( 'Login Type', 'daggerhart-openid-connect-generic' ),
+				'description' => __( 'Select how the client (login form) should provide login options.', 'daggerhart-openid-connect-generic' ),
+				'type'        => 'select',
+				'options'     => array(
+					'button' => __( 'OpenID Connect button on login form', 'daggerhart-openid-connect-generic' ),
+					'auto'   => __( 'Auto Login - SSO', 'daggerhart-openid-connect-generic' ),
+				),
+				'disabled'    => defined( 'OIDC_LOGIN_TYPE' ),
+				'section'     => 'client_settings',
+			),
 			'client_id'         => array(
 				'title'       => __( 'Client ID', 'daggerhart-openid-connect-generic' ),
 				'description' => __( 'The ID this client will be recognized as when connecting the to Identity provider server.', 'daggerhart-openid-connect-generic' ),

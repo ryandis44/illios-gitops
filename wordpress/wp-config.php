@@ -44,11 +44,17 @@ if (!function_exists('getenv_docker')) {
 // OpenID Connect Environment Variables
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
 define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
-define( 'OIDC_LOGIN_TYPE', getenv_docker('OIDC_LOGIN_TYPE', 'auto') );
 define( 'OIDC_ENDPOINT_LOGIN_URL', getenv_docker('OIDC_ENDPOINT_LOGIN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/auth') );
 define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/userinfo') );
 define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
 define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
+
+// Only define OIDC_LOGIN_TYPE if it is set in env; otherwise do not
+// set in WP so users can modify this on their own
+$oidcLoginType = getenv_docker('OIDC_LOGIN_TYPE', '');
+if ($oidcLoginType !== '') {
+    define('OIDC_LOGIN_TYPE', $oidcLoginType);
+}
 
 // Only define OIDC_ENFORCE_PRIVACY if it is set in env; otherwise do not
 // set in WP so users can modify this on their own
@@ -57,7 +63,12 @@ if ($oidcEnforcePrivacy !== '') {
     define('OIDC_ENFORCE_PRIVACY', $oidcEnforcePrivacy);
 }
 
-
+error_log('OIDC_CLIENT_ID: ' . OIDC_CLIENT_ID);
+error_log('OIDC_CLIENT_SECRET: ' . OIDC_CLIENT_SECRET);
+error_log('OIDC_ENDPOINT_LOGIN_URL: ' . OIDC_ENDPOINT_LOGIN_URL);
+error_log('OIDC_ENDPOINT_USERINFO_URL: ' . OIDC_ENDPOINT_USERINFO_URL);
+error_log('OIDC_ENDPOINT_TOKEN_URL: ' . OIDC_ENDPOINT_TOKEN_URL);
+error_log('OIDC_ENDPOINT_LOGOUT_URL: ' . OIDC_ENDPOINT_LOGOUT_URL);
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
