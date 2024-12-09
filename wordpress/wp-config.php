@@ -49,7 +49,13 @@ define( 'OIDC_ENDPOINT_LOGIN_URL', getenv_docker('OIDC_ENDPOINT_LOGIN_URL', 'htt
 define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/userinfo') );
 define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
 define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
-define( 'OIDC_ENFORCE_PRIVACY', getenv_docker('OIDC_ENFORCE_PRIVACY', null) );
+
+// Only define OIDC_ENFORCE_PRIVACY if it is set in env; otherwise do not
+// set in WP so users can modify this on their own
+$oidcEnforcePrivacy = getenv_docker('OIDC_ENFORCE_PRIVACY', '');
+if ($oidcEnforcePrivacy !== '') {
+    define('OIDC_ENFORCE_PRIVACY', $oidcEnforcePrivacy);
+}
 
 
 
