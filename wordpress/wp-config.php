@@ -40,6 +40,8 @@ if (!function_exists('getenv_docker')) {
 }
 
 
+
+// OpenID Connect Environment Variables
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
 define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
 define( 'OIDC_LOGIN_TYPE', getenv_docker('OIDC_LOGIN_TYPE', 'auto') );
@@ -47,8 +49,7 @@ define( 'OIDC_ENDPOINT_LOGIN_URL', getenv_docker('OIDC_ENDPOINT_LOGIN_URL', 'htt
 define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/userinfo') );
 define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
 define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
-define( 'OIDC_ENFORCE_PRIVACY', getenv_docker('OIDC_ENFORCE_PRIVACY', '') );
-
+define( 'OIDC_ENFORCE_PRIVACY', getenv_docker('OIDC_ENFORCE_PRIVACY', null) );
 
 
 
