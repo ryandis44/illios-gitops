@@ -41,6 +41,8 @@ if (!function_exists('getenv_docker')) {
 
 
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
+define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
+define( 'OIDC_LOGIN_TYPE', getenv_docker('OIDC_LOGIN_TYPE', '') );
 
 
 
