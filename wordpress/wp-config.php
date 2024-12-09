@@ -42,7 +42,11 @@ if (!function_exists('getenv_docker')) {
 
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
 define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
-define( 'OIDC_LOGIN_TYPE', getenv_docker('OIDC_LOGIN_TYPE', '') );
+define( 'OIDC_LOGIN_TYPE', getenv_docker('OIDC_LOGIN_TYPE', 'auto') );
+define( 'OIDC_ENDPOINT_LOGIN_URL', getenv_docker('OIDC_ENDPOINT_LOGIN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/auth') );
+define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/userinfo') );
+define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
+define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
 
 
 
