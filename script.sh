@@ -51,6 +51,12 @@ if [ -f "$HOME/gitops/plugins/enabled.txt" ]; then
       echo "[*] > Permissions set for /var/www/html/wp-content/mu-plugins/$f";
     fi; 
   done < "$HOME/gitops/plugins/enabled.txt"; 
+
+  # Load the proxy loader, responsible for loading all 'must-use' plugins
+  echo "[+] > Copied proxy-loader.php to /var/www/html/wp-content/mu-plugins/proxy-loader.php" && cp -r "$HOME/gitops/proxy-loader.php" "/var/www/html/wp-content/mu-plugins/proxy-loader.php" && 
+  chown -R 0:0 "/var/www/html/wp-content/mu-plugins/proxy-loader.php" && 
+  chmod -R 555 "/var/www/html/wp-content/mu-plugins/proxy-loader.php" && 
+
   echo "[*] > Plugin ops complete.";
 else 
   echo "[!] > enabled.txt not found."; 
