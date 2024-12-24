@@ -43,7 +43,7 @@ if [ -f "$HOME/gitops/plugins/enabled.txt" ]; then
       echo "[-] > Deleted /var/www/html/wp-content/mu-plugins/$f" && rm -rf "/var/www/html/wp-content/mu-plugins/$f"; 
     fi; 
     if [ -d "$HOME/gitops/plugins/$f" ]; then 
-      echo "[+] > Copied plugins/$f to /var/www/html/wp-content/mu-plugins/$f" && cp -r "$HOME/gitops/plugins/$f" "/var/www/html/wp-content/mu-plugins/" && 
+      echo "[+] > Copied plugins/$f to /var/www/html/wp-content/mu-plugins/$f" && cp -r "$HOME/gitops/plugins/$f" "/var/www/html/wp-content/mu-plugins/$f" && 
       chown -R 0:0 "/var/www/html/wp-content/mu-plugins/$f" && 
       chmod -R 555 "/var/www/html/wp-content/mu-plugins/$f" && 
       echo "[*] > Permissions set for /var/www/html/wp-content/mu-plugins/$f";
