@@ -14,30 +14,6 @@
 
 $openid_connect = 'oidc-illios/openid-connect-generic.php';
 
-// Prevent deactivation and deletion of this plugin
-add_action('admin_init', function() use ($openid_connect) {
-    if (isset($_GET['action']) && $_GET['action'] === 'deactivate' && isset($_GET['plugin'])) {
-        if ($_GET['plugin'] === $openid_connect && !current_user_can('superadmin')) {
-            wp_die(__('You do not have permission to deactivate this plugin.'));
-        }
-    }
-});
-
-// Hide the plugin from the plugins list
-add_action('admin_menu', function() use ($openid_connect) {
-    if (!current_user_can('superadmin')) {
-        add_action('admin_head', function() use ($openid_connect) {
-            ?>
-            <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                $('tr[data-plugin="<?php echo $openid_connect; ?>"]').hide(); // Hides the plugin row in the plugins list
-            });
-            </script>
-            <?php
-        });
-    }
-});
-
 add_action('openid-connect-generic-update-user-using-current-claim', function($user, $user_claim) {
     
     /* Debugging
