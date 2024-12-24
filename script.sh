@@ -29,6 +29,8 @@ for file in "$HOME/gitops/wordpress/"*; do
     fi
 done
 
+mkdir -p "/var/www/html/wp-content/mu-plugins" && # Ensure mu-plugins exists
+
 echo "4. Setting file/folder permissions..." && 
 # Set file permissions (primarily a post-restore step); intentionally done before plugins so they have their own permissions
 find "/var/www/html/" -type d -exec chmod 755 {} \; && 
