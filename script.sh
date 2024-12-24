@@ -39,14 +39,14 @@ chmod 777 -R "/var/www/html/wp-content/" && # wp-content can be modified by anyo
 echo "5. Starting plugin ops..." && 
 if [ -f "$HOME/gitops/plugins/enabled.txt" ]; then 
   while IFS= read -r f || [ -n "$f" ]; do # IFS= sets whitespace to newline. || [ -n "$f" ] prevents the last line from being ignored.
-    if [ -d "/var/www/html/wp-content/plugins/$f" ]; then 
-      echo "[-] > Deleted /var/www/html/wp-content/plugins/$f" && rm -rf "/var/www/html/wp-content/plugins/$f"; 
+    if [ -d "/var/www/html/wp-content/mu-plugins/$f" ]; then 
+      echo "[-] > Deleted /var/www/html/wp-content/mu-plugins/$f" && rm -rf "/var/www/html/wp-content/mu-plugins/$f"; 
     fi; 
     if [ -d "$HOME/gitops/plugins/$f" ]; then 
-      echo "[+] > Copied plugins/$f to /var/www/html/wp-content/plugins/$f" && cp -r "$HOME/gitops/plugins/$f" "/var/www/html/wp-content/plugins/" && 
-      chown -R 0:0 "/var/www/html/wp-content/plugins/$f" && 
-      chmod -R 555 "/var/www/html/wp-content/plugins/$f" && 
-      echo "[*] > Permissions set for /var/www/html/wp-content/plugins/$f";
+      echo "[+] > Copied plugins/$f to /var/www/html/wp-content/mu-plugins/$f" && cp -r "$HOME/gitops/plugins/$f" "/var/www/html/wp-content/mu-plugins/" && 
+      chown -R 0:0 "/var/www/html/wp-content/mu-plugins/$f" && 
+      chmod -R 555 "/var/www/html/wp-content/mu-plugins/$f" && 
+      echo "[*] > Permissions set for /var/www/html/wp-content/mu-plugins/$f";
     fi; 
   done < "$HOME/gitops/plugins/enabled.txt"; 
   echo "[*] > Plugin ops complete.";
