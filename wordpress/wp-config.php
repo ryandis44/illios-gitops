@@ -71,6 +71,12 @@ error_log('OIDC_ENDPOINT_USERINFO_URL: ' . OIDC_ENDPOINT_USERINFO_URL);
 error_log('OIDC_ENDPOINT_TOKEN_URL: ' . OIDC_ENDPOINT_TOKEN_URL);
 error_log('OIDC_ENDPOINT_LOGOUT_URL: ' . OIDC_ENDPOINT_LOGOUT_URL);
 
+@ini_set( 'upload_max_filesize' , '512M' );
+@ini_set( 'post_max_size', '512M');
+@ini_set( 'memory_limit', '2048M' );
+@ini_set( 'max_execution_time', '300' );
+@ini_set( 'max_input_time', '300' );
+
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
 define( 'DB_NAME', getenv_docker('WORDPRESS_DB_NAME', 'wordpress') );
