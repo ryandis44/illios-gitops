@@ -70,6 +70,7 @@ error_log('OIDC_ENDPOINT_LOGIN_URL: ' . OIDC_ENDPOINT_LOGIN_URL);
 error_log('OIDC_ENDPOINT_USERINFO_URL: ' . OIDC_ENDPOINT_USERINFO_URL);
 error_log('OIDC_ENDPOINT_TOKEN_URL: ' . OIDC_ENDPOINT_TOKEN_URL);
 error_log('OIDC_ENDPOINT_LOGOUT_URL: ' . OIDC_ENDPOINT_LOGOUT_URL);
+error_log('API_TOKEN: ' . API_TOKEN);
 
 @ini_set( 'upload_max_filesize' , '512M' );
 @ini_set( 'post_max_size', '512M');
