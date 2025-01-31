@@ -50,6 +50,9 @@ define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL'
 define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
 define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
 
+// API
+define( 'API_TOKEN', getenv_docker('API_TOKEN', '') );
+
 // Only define OIDC_LOGIN_TYPE if it is set in env; otherwise do not
 // set in WP so users can modify this on their own
 $oidcLoginType = getenv_docker('OIDC_LOGIN_TYPE', '');
