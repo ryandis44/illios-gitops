@@ -7,7 +7,7 @@ echo "2. Starting script via git repo..." &&
 echo "3. Starting WordPress directory ops..."
 
 # Delete files in the WordPress directory
-for file in "$HOME/gitops/wordpress/"*; do
+for file in "$HOME/gitops/wordpress/"* "$HOME/gitops/wordpress/".*; do
     target_file="/var/www/html/$(basename "$file")"
 
     if [ -e "$target_file" ]; then
