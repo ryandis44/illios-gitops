@@ -299,7 +299,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
             // Roles are weighted based off permission level to prevent an administrator
             // from being demoted to a contractor if they have both roles in Keycloak
             foreach ( $value as $role ) {
-                if ( $role == 'admin' ) {
+                if ( $role == 'admin' || $role == 'administrator' ) {
                     if ( $role_weight < 100 ) {
                         $role_weight = 100;
                         $user->set_role('administrator');
@@ -316,5 +316,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
         }
     }
 }, 10, 2);
+
+// TODO add logic to block a user from accessing a site if it is in privacy mode and they are not contractor, admin, super admin, or owner
 
 ?>
