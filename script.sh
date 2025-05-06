@@ -35,6 +35,7 @@ echo "4. Setting file/folder permissions..." &&
 # Set file permissions (primarily a post-restore step); intentionally done before plugins so they have their own permissions
 find "/var/www/html/" -type d -exec chmod 755 {} \; && 
 find "/var/www/html/" -type f -exec chmod 644 {} \; && 
+chown -R 33:33 "/var/www/html/" && # Ensure ownership is set to www-data
 chmod 777 -R "/var/www/html/wp-content/" && # wp-content can be modified by anyone
 
 # Plugin ops
