@@ -52,6 +52,7 @@ define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'h
 
 // API
 define( 'API_TOKEN', getenv_docker('API_TOKEN', '') );
+define( 'STAGING_API_TOKEN', getenv_docker('STAGING_API_TOKEN', '') );
 
 // Only define OIDC_LOGIN_TYPE if it is set in env; otherwise do not
 // set in WP so users can modify this on their own
@@ -74,6 +75,7 @@ error_log('OIDC_ENDPOINT_USERINFO_URL: ' . OIDC_ENDPOINT_USERINFO_URL);
 error_log('OIDC_ENDPOINT_TOKEN_URL: ' . OIDC_ENDPOINT_TOKEN_URL);
 error_log('OIDC_ENDPOINT_LOGOUT_URL: ' . OIDC_ENDPOINT_LOGOUT_URL);
 error_log('API_TOKEN: ' . API_TOKEN);
+error_log('STAGING_API_TOKEN: ' . STAGING_API_TOKEN);
 
 @ini_set( 'upload_max_filesize' , '512M' );
 @ini_set( 'post_max_size', '512M');
