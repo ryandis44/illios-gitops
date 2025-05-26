@@ -158,6 +158,7 @@ class OpenID_Connect_Generic {
 		);
 
 		$this->client_wrapper = OpenID_Connect_Generic_Client_Wrapper::register( $this->client, $this->settings, $this->logger );
+		$this->client_wrapper->ensure_tokens_still_fresh(); // Force the client to check if the tokens are still fresh.
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			return;
 		}
