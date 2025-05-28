@@ -16,6 +16,17 @@ $openid_connect = 'oidc-illios/openid-connect-generic.php';
 
 add_action('openid-connect-generic-update-user-using-current-claim', function($user, $user_claim) {
     
+    if ( ! defined('OIDC_CLIENT_ID') || ! defined('OIDC_CLIENT_SECRET') ) {
+        wp_die(
+            '<h1 style="color:red;font-size:2em;">CRITICAL ERROR</h1>
+            <p style="font-size:1.2em;">OIDC_CLIENT_ID or OIDC_CLIENT_SECRET is not defined.<br>
+            Please check your environment variables and wp-config.php file.</p>',
+            'Critical Error',
+            array('response' => 500)
+        );
+        return;
+    }
+
     /* Debugging
     Recursive print function. This function will print all the keys and values of a multi-dimensional array;
     depth of array does not matter.
@@ -45,7 +56,6 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
     // Define all WordPress capabilities
     $all_capabilities = array(
-        'keycloak' => false,
         'read' => true,
         'activate_plugins' => true,
         'edit_plugins' => true,
@@ -100,8 +110,8 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
 
     // Remove all roles
-    wp_roles()->roles;
-    foreach ( wp_roles()->roles as $key => $value ) {remove_role($key);}
+    // wp_roles()->roles;
+    // foreach ( wp_roles()->roles as $key => $value ) {remove_role($key);}
 
 
     // Subscriber role (for default role)
@@ -109,11 +119,67 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
 
     // Super Administrator role
+    if ( ! get_role('superadmin') ) {remove_role('superadmin');}
     add_role(
         'superadmin',
         'Super Administrator',
         array(
-            'keycloak' => true,
+            'read' => true,
+            'activate_plugins' => true,
+            'edit_plugins' => true,
+            'edit_dashboard' => true,
+            'manage_options' => true,
+            'edit_theme_options' => true,
+            'install_plugins' => true,
+            'update_plugins' => true,
+            'delete_plugins' => true,
+            'install_themes' => true,
+            'update_themes' => true,
+            'delete_themes' => true,
+            'edit_users' => true,
+            'delete_users' => true,
+            'create_users' => true,
+            'unfiltered_html' => true,
+            'edit_files' => true,
+            'edit_others_posts' => true,
+            'edit_published_posts' => true,
+            'publish_posts' => true,
+            'edit_pages' => true,
+            'edit_others_pages' => true,
+            'edit_published_pages' => true,
+            'publish_pages' => true,
+            'delete_pages' => true,
+            'delete_others_pages' => true,
+            'delete_published_pages' => true,
+            'delete_private_pages' => true,
+            'edit_private_pages' => true,
+            'read_private_pages' => true,
+            'delete_private_posts' => true,
+            'edit_private_posts' => true,
+            'read_private_posts' => true,
+            'manage_categories' => true,
+            'manage_links' => true,
+            'moderate_comments' => true,
+            'upload_files' => true,
+            'import' => true,
+            'export' => true,
+            'list_users' => true,
+            'remove_users' => true,
+            'promote_users' => true,
+            'switch_themes' => true,
+            'customize' => true,
+            'update_core' => true,
+            'delete_site' => true,
+        )
+    );
+
+
+    // Owner role
+    if ( ! get_role('siteowner') ) {remove_role('siteowner');}
+    add_role(
+        'siteowner',
+        'Site Owner',
+        array(
             'read' => true,
             'activate_plugins' => true,
             'edit_plugins' => true,
@@ -165,11 +231,11 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
 
     // Administrator role. Same as Super Administrator; only to to show a distinction in the WordPress admin panel
+    if ( ! get_role('administrator') ) {remove_role('administrator');}
     add_role(
         'administrator',
         'Administrator',
         array(
-            'keycloak' => false,
             'read' => true,
             'activate_plugins' => true,
             'edit_plugins' => true,
@@ -215,17 +281,17 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
             'switch_themes' => true,
             'customize' => true,
             'update_core' => true,
-            'delete_site' => true,
+            'delete_site' => false, // Administrators cannot delete the site
         )
     );
 
 
     // Contractor role
+    if ( ! get_role('contractor') ) {remove_role('contractor');}
     add_role(
         'contractor',
         'Contractor',
         array(
-            'keycloak' => false,
             'read' => true,
             'activate_plugins' => true,
             'edit_plugins' => true,
@@ -293,30 +359,49 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
             }
         }
 
-        if ( $key == 'roles' ) {
+        if ( $key == 'resource_access' ) {
 
-            // Iterate through all (Keycloak client) roles and assign WordPress roles.
-            // Roles are weighted based off permission level to prevent an administrator
-            // from being demoted to a contractor if they have both roles in Keycloak
-            foreach ( $value as $role ) {
-                if ( $role == 'admin' || $role == 'administrator' ) {
-                    if ( $role_weight < 100 ) {
-                        $role_weight = 100;
-                        $user->set_role('administrator');
+            if ( isset($value[getenv('OIDC_CLIENT_ID')]) ) {
+
+                // Iterate through all (Keycloak client) roles and assign WordPress roles.
+                // Roles are weighted based off permission level to prevent an administrator
+                // from being demoted to a contractor if they have both roles in Keycloak
+                foreach ( $value[getenv('OIDC_CLIENT_ID')] as $role ) {
+                    if ( $role == 'owner' || $role == 'siteowner' ) {
+                        if ( $role_weight < 500 ) {
+                            $role_weight = 500;
+                            $user->set_role('siteowner');
+                        }
+                    } else if ( $role == 'admin' || $role == 'administrator' ) {
+                        if ( $role_weight < 100 ) {
+                            $role_weight = 100;
+                            $user->set_role('administrator');
+                        }
+                    } else if ( $role == 'contractor' ) {
+                        if ( $role_weight < 50 ) {
+                            $role_weight = 50;
+                            $user->set_role('contractor');
+                        }
+                    } else {
+                        $user->set_role('');
                     }
-                } else if ( $role == 'contractor' ) {
-                    if ( $role_weight < 50 ) {
-                        $role_weight = 50;
-                        $user->set_role('contractor');
-                    }
-                } else {
-                    $user->set_role('');
                 }
             }
         }
     }
-}, 10, 2);
 
-// TODO add logic to block a user from accessing a site if it is in privacy mode and they are not contractor, admin, super admin, or owner
+    if ( $role_weight == 0 ) {
+        // If no roles were assigned, deny access to the site with a scarier message
+        status_header(403);
+        wp_die(
+            '<h1 style="color:red;font-size:2em;">ACCESS DENIED</h1>
+            <p style="font-size:1.2em;">You do not have the required permissions to log into this site.<br></p>',
+            'Forbidden',
+            array('response' => 403)
+        );
+        return;
+    }
+
+}, 10, 2);
 
 ?>
