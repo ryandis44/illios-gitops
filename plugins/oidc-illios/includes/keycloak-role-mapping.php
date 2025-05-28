@@ -109,15 +109,6 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
     foreach ( $all_capabilities as $capability => $value ) {$user->remove_cap($capability);}
 
 
-    // Remove all roles
-    // wp_roles()->roles;
-    // foreach ( wp_roles()->roles as $key => $value ) {remove_role($key);}
-
-
-    // Subscriber role (for default role)
-    add_role('subscriber', 'Subscriber', array('read' => true, 'keycloak' => false));
-
-
     // Super Administrator role
     if ( ! get_role('superadmin') ) {remove_role('superadmin');}
     add_role(
