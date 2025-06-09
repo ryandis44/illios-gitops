@@ -1,0 +1,441 @@
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   annotations:
+#     field.cattle.io/projectId: local:p-npst8
+#   labels:
+#     field.cattle.io/projectId: p-npst8
+#   name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+--- ########################################################################################################################
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-{{ .Values.service-id }}-pvc
+  namespace: wordpress-{{ .Values.service-id }}
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: rook-cephfs
+--- ########################################################################################################################
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   labels:
+#     app: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: wordpress
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         app: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+#     spec:
+#       containers:
+#       - env:
+#         - name: WORDPRESS_DB_NAME
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_DATABASE
+#               name: mariadb-secret
+#               optional: false
+#         - name: WORDPRESS_DB_USER
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_USER
+#               name: mariadb-secret
+#               optional: false
+#         - name: WORDPRESS_DB_PASSWORD
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_PASSWORD
+#               name: mariadb-secret
+#               optional: false
+#         envFrom:
+#         - configMapRef:
+#             name: wordpress-cmap
+#         - secretRef:
+#             name: wordpress-secret
+#         image: wordpress:latest
+#         name: wordpress
+#         ports:
+#         - containerPort: 80
+#         resources:
+#           limits:
+#             cpu: 500m
+#             memory: 1024Mi
+#           requests:
+#             cpu: 500m
+#             memory: 1024Mi
+#         volumeMounts:
+#         - mountPath: /var/www/html
+#           name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#           subPath: wordpress
+#       initContainers:
+#       - command:
+#         - sh
+#         - -c
+#         - while ! nc -z mariadb 3306; do echo "Waiting for MariaDB to be ready...";
+#           sleep 10; done
+#         image: alpine/git
+#         name: wait-for-database
+#       volumes:
+#       - name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#         persistentVolumeClaim:
+#           claimName: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+# --- ########################################################################################################################
+# apiVersion: v1
+# data:
+#   OIDC_CLIENT_ID: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   OIDC_LOGIN_TYPE: button
+#   WORDPRESS_DB_HOST: mariadb
+# kind: ConfigMap
+# metadata:
+#   name: wordpress-cmap
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# --- ########################################################################################################################
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: traefik-external
+#   name: wordpress
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   entryPoints:
+#   - websecure
+#   routes:
+#   - kind: Rule
+#     match: Host(`just-organized-0f66.illiosdigital.com`)
+#     services:
+#     - name: wordpress
+#       port: 80
+# --- ########################################################################################################################
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: wordpress-install
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   template:
+#     spec:
+#       containers:
+#       - command:
+#         - sh
+#         - -c
+#         - echo "Starting WordPress CLI container script..." &&                                         while
+#           ! nc -z mariadb 3306; do                                            echo
+#           "Waiting for MariaDB to be ready...";                                            sleep
+#           2;                                        done &&                                     echo
+#           "MariaDB is ready! Proceeding with WordPress installation..." &&                                     wp
+#           core install --url=$WORDPRESS_DB_HOST --title="just organized" --admin_user="43d630cb-0f66-445f-9c1f-49ca571b672b"
+#           --admin_password=$WORDPRESS_DB_PASSWORD --admin_email=admin@illiosdigital.com
+#           --url=https://just-organized-0f66.illiosdigital.com
+#         env:
+#         - name: WORDPRESS_DB_NAME
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_DATABASE
+#               name: mariadb-secret
+#               optional: false
+#         - name: WORDPRESS_DB_USER
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_USER
+#               name: mariadb-secret
+#               optional: false
+#         - name: WORDPRESS_DB_PASSWORD
+#           valueFrom:
+#             secretKeyRef:
+#               key: MARIADB_PASSWORD
+#               name: mariadb-secret
+#               optional: false
+#         envFrom:
+#         - configMapRef:
+#             name: wordpress-cmap
+#         image: wordpress:cli
+#         name: wordpress-cli
+#         volumeMounts:
+#         - mountPath: /var/www/html
+#           name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#           subPath: wordpress
+#       restartPolicy: OnFailure
+#       volumes:
+#       - name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#         persistentVolumeClaim:
+#           claimName: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+# --- ########################################################################################################################
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     app: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: wordpress
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   clusterIP: None
+#   ports:
+#   - port: 80
+#   selector:
+#     app: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# --- ########################################################################################################################
+# apiVersion: v1
+# data:
+#   AUTH_KEY: cGx5VlRwYkUybFNzdmdCWHJ1KmFKVGtrRmhGWGNkSHFsYlhPejRHcnQ4RlZjRHMteWI0bGdocV94OCEtWXI3Mw==
+#   AUTH_SALT: TlZKYip5NW5TQlpPdnZCRFpDVHJJbG1mRUFxMFVpUXlsM01Fc0FAWllPWDNQSUk1UmtwbXlpbWJuQTRkdFdIKg==
+#   LOGGED_IN_KEY: bFcyQkFYTU1aMmt4ejllTlhtdFBBS0tnRmdNUlpqWlUyY0xOclJXLXhoeXlmYk83ZnUtWmRATkF5V1ZLR0pfSg==
+#   LOGGED_IN_SALT: RWVjTW5nV3dLTFNaYUcyLThhbXpVcWxCTUhrd2VJb2FDKmJUWTVNUFAzYi13TmZsa1o5U0h3VUtYeUJvOC1ndQ==
+#   NONCE_KEY: YTVMdmM1OXQzUk50X2JmZ0JabWRBQEZaNTJVQHhuZHBkX1E1TUl5blIqV1lzUUBRXzl2Y2dyYUUxcnoySXBfNw==
+#   NONCE_SALT: WXlqd2FHdHcxMmxxWUpCbjRCUVVLNDlkbmctc05oTHlROGtWN2JAV1Y2UjVRVFB1bzZhVSFPYzhoX05VeTlyRQ==
+#   OIDC_CLIENT_SECRET: ang4akx6VEsyZG53TGlwd1liRWlEQzRPQTdndEswWUI=
+#   SECURE_AUTH_KEY: Zm0hOFZ1U2Y0MWdBbGtCaU9LcUo5UyEzaUdXOWJ6RHFqYXBCbS1VTmdVbUVyeWdBSlVKUXFwUXJxRExnOEJYVQ==
+#   SECURE_AUTH_SALT: KkU0LVlhenNjVU9hSGZRdHJCZWxSRUFPUDI4SEpkcWJOR1BFZzVJQTkycUg3MnBxSEhqWDBZeldPbjVQNHUhaw==
+# kind: Secret
+# metadata:
+#   name: wordpress-secret
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# type: Opaque
+# --- ########################################################################################################################
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   labels:
+#     app: mariadb-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: mariadb
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: mariadb-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         app: mariadb-43d630cb-0f66-445f-9c1f-49ca571b672b
+#     spec:
+#       containers:
+#       - envFrom:
+#         - secretRef:
+#             name: mariadb-secret
+#         image: mariadb:11.7.2
+#         livenessProbe:
+#           failureThreshold: 3
+#           periodSeconds: 60
+#           successThreshold: 1
+#           tcpSocket:
+#             port: 3306
+#           timeoutSeconds: 5
+#         name: mariadb
+#         ports:
+#         - containerPort: 3306
+#         readinessProbe:
+#           failureThreshold: 3
+#           periodSeconds: 10
+#           successThreshold: 1
+#           tcpSocket:
+#             port: 3306
+#           timeoutSeconds: 5
+#         resources:
+#           limits:
+#             cpu: 500m
+#             memory: 1024Mi
+#           requests:
+#             cpu: 500m
+#             memory: 1024Mi
+#         startupProbe:
+#           failureThreshold: 60
+#           initialDelaySeconds: 30
+#           periodSeconds: 10
+#           successThreshold: 1
+#           tcpSocket:
+#             port: 3306
+#           timeoutSeconds: 5
+#         volumeMounts:
+#         - mountPath: /var/lib/mysql
+#           name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#           subPath: database
+#       volumes:
+#       - name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#         persistentVolumeClaim:
+#           claimName: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+# --- ########################################################################################################################
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     app: mariadb-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: mariadb
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   ports:
+#   - port: 3306
+#     protocol: TCP
+#     targetPort: 3306
+#   selector:
+#     app: mariadb-43d630cb-0f66-445f-9c1f-49ca571b672b
+# --- ########################################################################################################################
+# apiVersion: v1
+# data:
+#   MARIADB_DATABASE: d29yZHByZXNzLTQzZDYzMGNiLTBmNjYtNDQ1Zi05YzFmLTQ5Y2E1NzFiNjcyYg==
+#   MARIADB_MYSQL_LOCALHOST_GRANTS: VVNBR0U=
+#   MARIADB_MYSQL_LOCALHOST_USER: bG9jYWxob3N0
+#   MARIADB_PASSWORD: ekdYbVY2N1Y4MG5Lc0twTTNTUzI4SEUhM0RCaXhXbmxQOV9RTVB1Ni1wSVdrblhaSnh0b3M2cEJyZGVWQHVtMg==
+#   MARIADB_ROOT_PASSWORD: IUppUDF2LW9YRk9uQkptcEFGbFVUQF8zLVZwa2VzMEtQaVM4YUFWZjBQV29aQ1BWUHdqVVBiMjRAWndEVW5Jag==
+#   MARIADB_USER: d29yZHByZXNzLTQzZDYzMGNiLTBmNjYtNDQ1Zi05YzFmLTQ5Y2E1NzFiNjcyYg==
+# kind: Secret
+# metadata:
+#   name: mariadb-secret
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# type: Opaque
+# --- ########################################################################################################################
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   labels:
+#     app: filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: filebrowser
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         app: filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b
+#     spec:
+#       containers:
+#       - args:
+#         - --noauth
+#         image: filebrowser/filebrowser:latest
+#         livenessProbe:
+#           failureThreshold: 3
+#           initialDelaySeconds: 30
+#           periodSeconds: 60
+#           successThreshold: 1
+#           tcpSocket:
+#             port: 80
+#           timeoutSeconds: 5
+#         name: filebrowser
+#         ports:
+#         - containerPort: 80
+#         readinessProbe:
+#           failureThreshold: 3
+#           initialDelaySeconds: 30
+#           periodSeconds: 10
+#           successThreshold: 1
+#           tcpSocket:
+#             port: 80
+#           timeoutSeconds: 5
+#         resources:
+#           limits:
+#             cpu: 500m
+#             memory: 512Mi
+#           requests:
+#             cpu: 500m
+#             memory: 512Mi
+#         securityContext:
+#           runAsUser: 0
+#         volumeMounts:
+#         - mountPath: /srv
+#           name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#       volumes:
+#       - name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#         persistentVolumeClaim:
+#           claimName: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+# --- ########################################################################################################################
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     app: filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b
+#   name: filebrowser
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   clusterIP: None
+#   ports:
+#   - port: 80
+#     protocol: TCP
+#     targetPort: 80
+#   selector:
+#     app: filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b
+# --- ########################################################################################################################
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: traefik-external
+#   name: filebrowser
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   entryPoints:
+#   - websecure
+#   routes:
+#   - kind: Rule
+#     match: Host(`filebrowser-43d630cb-0f66-445f-9c1f-49ca571b672b.illiosdigital.com`)
+#     middlewares:
+#     - name: filebrowser-auth
+#     services:
+#     - name: filebrowser
+#       port: 80
+# --- ########################################################################################################################
+# apiVersion: traefik.io/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: filebrowser-auth
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   basicAuth:
+#     secret: filebrowser-auth
+# ---
+# apiVersion: v1
+# data:
+#   password: R1kzQU9Hc3M2ajk5bnhlcl9xS0h0SzNtMmNqM0ZSZkQxMFh1RVBNTUwwSyppMExlbUVCNjJ4VWtzQEhGeHlPVw==
+#   username: d29yZHByZXNzLTQzZDYzMGNiLTBmNjYtNDQ1Zi05YzFmLTQ5Y2E1NzFiNjcyYi1SVGJxZFZrQQ==
+# kind: Secret
+# metadata:
+#   name: filebrowser-auth
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# type: kubernetes.io/basic-auth
+# --- ########################################################################################################################
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: git-install
+#   namespace: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b
+# spec:
+#   template:
+#     spec:
+#       containers:
+#       - command:
+#         - sh
+#         - -c
+#         - echo "1. Starting gitops container script..." && mkdir -p $HOME/gitops &&
+#           cd $HOME/gitops && git clone https://github.com/ryandis44/illios-gitops.git
+#           . && chmod +x $HOME/gitops/script.sh && $HOME/gitops/script.sh
+#         image: alpine/git
+#         name: gitops
+#         securityContext:
+#           runAsUser: 0
+#         volumeMounts:
+#         - mountPath: /var/www/html
+#           name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#           subPath: wordpress
+#       restartPolicy: OnFailure
+#       volumes:
+#       - name: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
+#         persistentVolumeClaim:
+#           claimName: wordpress-43d630cb-0f66-445f-9c1f-49ca571b672b-pvc
