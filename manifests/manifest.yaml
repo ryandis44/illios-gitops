@@ -19,7 +19,6 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: rook-cephfs
---- ########################################################################################################################
 # apiVersion: apps/v1
 # kind: Deployment
 # metadata:
