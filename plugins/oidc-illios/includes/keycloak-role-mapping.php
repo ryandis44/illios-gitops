@@ -1,15 +1,17 @@
 <?php
 
 /**
- * Global OIDCG functions.
+ * Global OIDC functions.
  * 
  * Implementation for Illios Digital LLC
  * 
- * This file serves to hide this plugin and its functionalities from any user that is not a
- * super administrator.
- * 
- * Additionally, this plugin assigns WordPress roles based on Keycloak roles at login and
+ * This plugin assigns WordPress roles based on Keycloak roles at login and
  * updates user and role capabilities.
+ * 
+ * It marks all permissions as true for these special roles, effectively
+ * granting them superuser access. They are named differently to easily
+ * determine the type of user, but effectively have the same capabilities as
+ * an administrator.
  */
 
 $openid_connect = 'oidc-illios/openid-connect-generic.php';
@@ -54,301 +56,35 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
         return;
     }
 
-    // Define all WordPress capabilities
-    $all_capabilities = array(
-        'read' => true,
-        'activate_plugins' => true,
-        'edit_plugins' => true,
-        'edit_dashboard' => true,
-        'manage_options' => true,
-        'edit_theme_options' => true,
-        'install_plugins' => true,
-        'update_plugins' => true,
-        'delete_plugins' => true,
-        'install_themes' => true,
-        'update_themes' => true,
-        'delete_themes' => true,
-        'edit_users' => true,
-        'delete_users' => true,
-        'create_users' => true,
-        'unfiltered_html' => true,
-        'edit_files' => true,
-        'edit_others_posts' => true,
-        'edit_published_posts' => true,
-        'publish_posts' => true,
-        'edit_pages' => true,
-        'edit_others_pages' => true,
-        'edit_published_pages' => true,
-        'publish_pages' => true,
-        'delete_pages' => true,
-        'delete_others_pages' => true,
-        'delete_published_pages' => true,
-        'delete_private_pages' => true,
-        'edit_private_pages' => true,
-        'read_private_pages' => true,
-        'delete_private_posts' => true,
-        'edit_private_posts' => true,
-        'read_private_posts' => true,
-        'manage_categories' => true,
-        'manage_links' => true,
-        'moderate_comments' => true,
-        'upload_files' => true,
-        'import' => true,
-        'export' => true,
-        'list_users' => true,
-        'remove_users' => true,
-        'promote_users' => true,
-        'switch_themes' => true,
-        'customize' => true,
-        'update_core' => true,
-        'delete_site' => true,
-    );
-
-
-    // Remove all user capabilities
-    foreach ( $all_capabilities as $capability => $value ) {$user->remove_cap($capability);}
-
-
-    // Super Administrator role
-    if ( ! get_role('superadmin') ) {remove_role('superadmin');}
-    add_role(
-        'superadmin',
-        'Super Administrator',
-        array(
-            'read' => true,
-            'activate_plugins' => true,
-            'edit_plugins' => true,
-            'edit_dashboard' => true,
-            'manage_options' => true,
-            'edit_theme_options' => true,
-            'install_plugins' => true,
-            'update_plugins' => true,
-            'delete_plugins' => true,
-            'install_themes' => true,
-            'update_themes' => true,
-            'delete_themes' => true,
-            'edit_users' => true,
-            'delete_users' => true,
-            'create_users' => true,
-            'unfiltered_html' => true,
-            'edit_files' => true,
-            'edit_others_posts' => true,
-            'edit_published_posts' => true,
-            'publish_posts' => true,
-            'edit_pages' => true,
-            'edit_others_pages' => true,
-            'edit_published_pages' => true,
-            'publish_pages' => true,
-            'delete_pages' => true,
-            'delete_others_pages' => true,
-            'delete_published_pages' => true,
-            'delete_private_pages' => true,
-            'edit_private_pages' => true,
-            'read_private_pages' => true,
-            'delete_private_posts' => true,
-            'edit_private_posts' => true,
-            'read_private_posts' => true,
-            'manage_categories' => true,
-            'manage_links' => true,
-            'moderate_comments' => true,
-            'upload_files' => true,
-            'import' => true,
-            'export' => true,
-            'list_users' => true,
-            'remove_users' => true,
-            'promote_users' => true,
-            'switch_themes' => true,
-            'customize' => true,
-            'update_core' => true,
-            'delete_site' => true,
-        )
-    );
-
-
-    // Owner role
-    if ( ! get_role('siteowner') ) {remove_role('siteowner');}
-    add_role(
-        'siteowner',
-        'Site Owner',
-        array(
-            'read' => true,
-            'activate_plugins' => true,
-            'edit_plugins' => true,
-            'edit_dashboard' => true,
-            'manage_options' => true,
-            'edit_theme_options' => true,
-            'install_plugins' => true,
-            'update_plugins' => true,
-            'delete_plugins' => true,
-            'install_themes' => true,
-            'update_themes' => true,
-            'delete_themes' => true,
-            'edit_users' => true,
-            'delete_users' => true,
-            'create_users' => true,
-            'unfiltered_html' => true,
-            'edit_files' => true,
-            'edit_others_posts' => true,
-            'edit_published_posts' => true,
-            'publish_posts' => true,
-            'edit_pages' => true,
-            'edit_others_pages' => true,
-            'edit_published_pages' => true,
-            'publish_pages' => true,
-            'delete_pages' => true,
-            'delete_others_pages' => true,
-            'delete_published_pages' => true,
-            'delete_private_pages' => true,
-            'edit_private_pages' => true,
-            'read_private_pages' => true,
-            'delete_private_posts' => true,
-            'edit_private_posts' => true,
-            'read_private_posts' => true,
-            'manage_categories' => true,
-            'manage_links' => true,
-            'moderate_comments' => true,
-            'upload_files' => true,
-            'import' => true,
-            'export' => true,
-            'list_users' => true,
-            'remove_users' => true,
-            'promote_users' => true,
-            'switch_themes' => true,
-            'customize' => true,
-            'update_core' => true,
-            'delete_site' => true,
-        )
-    );
-
-
-    // Administrator role. Same as Super Administrator; only to to show a distinction in the WordPress admin panel
-    if ( ! get_role('administrator') ) {remove_role('administrator');}
-    add_role(
-        'administrator',
-        'Administrator',
-        array(
-            'read' => true,
-            'activate_plugins' => true,
-            'edit_plugins' => true,
-            'edit_dashboard' => true,
-            'manage_options' => true,
-            'edit_theme_options' => true,
-            'install_plugins' => true,
-            'update_plugins' => true,
-            'delete_plugins' => true,
-            'install_themes' => true,
-            'update_themes' => true,
-            'delete_themes' => true,
-            'edit_users' => true,
-            'delete_users' => true,
-            'create_users' => true,
-            'unfiltered_html' => true,
-            'edit_files' => true,
-            'edit_others_posts' => true,
-            'edit_published_posts' => true,
-            'publish_posts' => true,
-            'edit_pages' => true,
-            'edit_others_pages' => true,
-            'edit_published_pages' => true,
-            'publish_pages' => true,
-            'delete_pages' => true,
-            'delete_others_pages' => true,
-            'delete_published_pages' => true,
-            'delete_private_pages' => true,
-            'edit_private_pages' => true,
-            'read_private_pages' => true,
-            'delete_private_posts' => true,
-            'edit_private_posts' => true,
-            'read_private_posts' => true,
-            'manage_categories' => true,
-            'manage_links' => true,
-            'moderate_comments' => true,
-            'upload_files' => true,
-            'import' => true,
-            'export' => true,
-            'list_users' => true,
-            'remove_users' => true,
-            'promote_users' => true,
-            'switch_themes' => true,
-            'customize' => true,
-            'update_core' => true,
-            'delete_site' => false, // Administrators cannot delete the site
-        )
-    );
-
-
-    // Contractor role
-    if ( ! get_role('contractor') ) {remove_role('contractor');}
-    add_role(
-        'contractor',
-        'Contractor',
-        array(
-            'read' => true,
-            'activate_plugins' => true,
-            'edit_plugins' => true,
-            'edit_dashboard' => true,
-            'manage_options' => true,
-            'edit_theme_options' => true,
-            'install_plugins' => true,
-            'update_plugins' => true,
-            'delete_plugins' => true,
-            'install_themes' => true,
-            'update_themes' => true,
-            'delete_themes' => true,
-            'edit_users' => false,
-            'delete_users' => false,
-            'create_users' => false,
-            'unfiltered_html' => false,
-            'edit_files' => true,
-            'edit_others_posts' => true,
-            'edit_published_posts' => true,
-            'publish_posts' => true,
-            'edit_pages' => true,
-            'edit_others_pages' => true,
-            'edit_published_pages' => true,
-            'publish_pages' => true,
-            'delete_pages' => true,
-            'delete_others_pages' => true,
-            'delete_published_pages' => true,
-            'delete_private_pages' => true,
-            'edit_private_pages' => true,
-            'read_private_pages' => true,
-            'delete_private_posts' => false,
-            'edit_private_posts' => false,
-            'read_private_posts' => false,
-            'manage_categories' => true,
-            'manage_links' => true,
-            'moderate_comments' => false,
-            'upload_files' => true,
-            'import' => true,
-            'export' => true,
-            'list_users' => true,
-            'remove_users' => false,
-            'promote_users' => false,
-            'switch_themes' => true,
-            'customize' => true,
-            'update_core' => false,
-            'delete_site' => false,
-        )
-    );
+    // Ensure custom roles exist. Also runs as an init action.
+    if ( ! get_role('superadmin') ) {
+        add_role('superadmin', 'Super Administrator', ['read' => true]);
+    }
+    if ( ! get_role('siteowner') ) {
+        add_role('siteowner', 'Site Owner', ['read' => true]);
+    }
+    if ( ! get_role('contractor') ) {
+        add_role('contractor', 'Contractor', ['read' => true]);
+    }
 
 
     $user->set_role(''); // Reset user role pre-authentication
     $role_weight = 0;
     foreach ( $user_claim as $key => $value ) {
         
-        if ( $key == 'groups') {
-            foreach ( $value as $group ) {
-                if ( $group == 'GIGACHADMIN' ) {
-                    if ( $role_weight < 1000 ) {
-                        $role_weight = 1000;
-                        $user->set_role('superadmin');
-                    } else {
-                        $user->set_role('');
-                    }
-                }
-            }
-        }
+        // Removing our access; was enabled for testing. Fully removing a future commit.
+        // if ( $key == 'groups') {
+        //     foreach ( $value as $group ) {
+        //         if ( $group == 'GIGACHADMIN' ) {
+        //             if ( $role_weight < 1000 ) {
+        //                 $role_weight = 1000;
+        //                 $user->set_role('superadmin');
+        //             } else {
+        //                 $user->set_role('');
+        //             }
+        //         }
+        //     }
+        // }
 
         if ( $key == 'resource_access' ) {
 
@@ -371,7 +107,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
                         } else if ( $role == 'admin' || $role == 'administrator' ) {
                             if ( $role_weight < 100 ) {
                                 $role_weight = 100;
-                                $user->set_role('administrator');
+                                $user->set_role('superadmin');
                             }
                         } else if ( $role == 'contractor' ) {
                             if ( $role_weight < 50 ) {
@@ -401,5 +137,76 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
     }
 
 }, 10, 2);
+
+
+
+const GOD_ROLES = [ 'superadmin', 'siteowner', 'contractor' ];
+
+/**
+ * Helper: does the user have any of our special roles?
+ */
+function user_is_god( $user ): bool {
+	if ( ! $user || ! isset( $user->roles ) ) {
+		return false;
+	}
+	return (bool) array_intersect( GOD_ROLES, (array) $user->roles );
+}
+
+/**
+ * Neutralize `do_not_allow` from map_meta_cap()
+ *    (some meta caps map to the sentinel which otherwise makes the check auto-fail)
+ */
+add_filter( 'map_meta_cap', function( $caps, $cap, $user_id, $args ) {
+	$user = get_userdata( $user_id );
+	if ( ! user_is_god( $user ) ) {
+		return $caps;
+	}
+
+	// If WordPress mapped to 'do_not_allow', replace it with a benign primitive.
+	if ( in_array( 'do_not_allow', $caps, true ) ) {
+		$caps = array_values( array_diff( $caps, [ 'do_not_allow' ] ) );
+		if ( empty( $caps ) ) {
+			// 'exist' is a primitive cap that every logged-in user effectively has.
+			$caps = [ 'exist' ];
+		}
+	}
+	return $caps;
+}, 0, 4 ); // priority 0 to run as early as possible
+
+/**
+ * Stamp the primitive capabilities as granted during the final check.
+ */
+add_filter( 'user_has_cap', function( $allcaps, $caps, $args, $user ) {
+	if ( ! user_is_god( $user ) ) {
+		return $allcaps;
+	}
+
+	// Mark whatever primitives WP decided to check as true.
+	foreach ( (array) $caps as $cap ) {
+		$allcaps[ $cap ] = true;
+	}
+
+	// Ensure a few commonly-checked primitives are present too.
+	$allcaps['unfiltered_html'] = true;
+	$allcaps['update_core']     = true;
+
+	return $allcaps;
+}, 10, 4 );
+
+/**
+ * Ensure the roles exist on init. Runs every time a user logs in via OIDC as well.
+ */
+add_action( 'init', function () {
+	$labels = [
+		'superadmin' => 'Super Administrator',
+		'siteowner'  => 'Site Owner',
+		'contractor' => 'Contractor',
+	];
+	foreach ( $labels as $slug => $label ) {
+		if ( ! get_role( $slug ) ) {
+			add_role( $slug, $label, [ 'read' => true ] );
+		}
+	}
+}, 5 );
 
 ?>
