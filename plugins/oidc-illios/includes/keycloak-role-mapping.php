@@ -354,29 +354,36 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
             if ( isset($value[getenv('OIDC_CLIENT_ID')]) ) {
 
-                // Iterate through all (Keycloak client) roles and assign WordPress roles.
-                // Roles are weighted based off permission level to prevent an administrator
-                // from being demoted to a contractor if they have both roles in Keycloak
-                foreach ( $value[getenv('OIDC_CLIENT_ID')] as $role ) {
-                    if ( $role == 'owner' || $role == 'siteowner' ) {
-                        if ( $role_weight < 500 ) {
-                            $role_weight = 500;
-                            $user->set_role('siteowner');
+                // Check if there's a 'roles' key within the client data
+                if ( isset($value[getenv('OIDC_CLIENT_ID')]['roles']) ) {
+                    $roles_data = $value[getenv('OIDC_CLIENT_ID')]['roles'];
+
+                    // Iterate through all (Keycloak client) roles and assign WordPress roles.
+                    // Roles are weighted based off permission level to prevent an administrator
+                    // from being demoted to a contractor if they have both roles in Keycloak
+                    foreach ( $roles_data as $role ) {
+
+                        if ( $role == 'owner' || $role == 'siteowner' ) {
+                            if ( $role_weight < 500 ) {
+                                $role_weight = 500;
+                                $user->set_role('siteowner');
+                            }
+                        } else if ( $role == 'admin' || $role == 'administrator' ) {
+                            if ( $role_weight < 100 ) {
+                                $role_weight = 100;
+                                $user->set_role('administrator');
+                            }
+                        } else if ( $role == 'contractor' ) {
+                            if ( $role_weight < 50 ) {
+                                $role_weight = 50;
+                                $user->set_role('contractor');
+                            }
+                        } else {
+                            $user->set_role('');
                         }
-                    } else if ( $role == 'admin' || $role == 'administrator' ) {
-                        if ( $role_weight < 100 ) {
-                            $role_weight = 100;
-                            $user->set_role('administrator');
-                        }
-                    } else if ( $role == 'contractor' ) {
-                        if ( $role_weight < 50 ) {
-                            $role_weight = 50;
-                            $user->set_role('contractor');
-                        }
-                    } else {
-                        $user->set_role('');
                     }
                 }
+
             }
         }
     }
