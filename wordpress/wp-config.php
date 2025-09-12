@@ -39,7 +39,7 @@ if (!function_exists('getenv_docker')) {
         }
 }
 
-
+define('VHP_VARNISH_IP', 'wordpress');
 
 // OpenID Connect Environment Variables
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
