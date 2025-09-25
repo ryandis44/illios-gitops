@@ -1,0 +1,106 @@
+# This is the Compose file for command-line services.
+# Anything that doesn't need to be run as part of the main `docker-compose up'
+# command should reside in here and be invoked by a helper script.
+version: "3.7"
+
+services:
+  varnish:
+    image: varnish:latest
+    restart: unless-stopped
+    ports:
+      - "6081:6081"
+      - "6082:6082"
+    command: ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-a", ":6081", "-T", ":6082"]
+    environment:
+      - VARNISH_BACKEND_HOST=web
+      - VARNISH_BACKEND_PORT=80
+    depends_on:
+      - web
+    networks:
+      - cachewp-net
+  app:
+    image: ghcr.io/ndigitals/wp-dev-container:php-8.0-node-16
+    restart: always
+    depends_on:
+      - db
+      - phpmyadmin
+      - web
+      - mailhog
+    working_dir: /workspaces/cache-illios
+    environment: &env
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_TEST_DB_NAME: wordpress_test
+      CODESPACES: "${CODESPACES}"
+      CODESPACE_NAME: "${CODESPACE_NAME}"
+      GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    volumes:
+      - .:/workspaces/cache-illios:cached
+      - ./tools/local-env:/app:cached
+      - ./tools/php/php-cli.ini:/usr/local/etc/php/php-cli.ini:ro,cached
+      - .:/app/wp/wp-content/plugins/cache-illios:ro,cached
+      - ~/.composer:/root/.composer:cached
+      - ~/.npm:/root/.npm:cached
+    networks:
+      - cachewp-net
+
+  web:
+    image: httpd
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - 8082:80
+    environment:
+      <<: *env
+    volumes:
+      - ./tools/local-env:/app:cached
+      - .:/app/wp/wp-content/plugins/cache-illios:ro,cached
+      - ./tools/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro,cached
+    networks:
+      - cachewp-net
+
+  db:
+    image: mariadb
+    restart: unless-stopped
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - cache_db:/var/lib/mysql
+    networks:
+      - cachewp-net
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - 8083:8081
+    environment:
+      PMA_HOST: db
+      APACHE_PORT: 8081
+    networks:
+      - cachewp-net
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+      - 1026:1025 # smtp server
+      - 8027:8025 # web ui
+    networks:
+      - cachewp-net
+
+volumes:
+  cache_db:
+
+networks:
+  cachewp-net:

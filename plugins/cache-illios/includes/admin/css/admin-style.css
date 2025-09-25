@@ -1,0 +1,154 @@
+/* General Admin Page */
+.illios-admin-wrap {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Headings */
+.illios-admin-wrap h1 {
+    font-size: 2em;
+    margin-bottom: 1em;
+}
+
+.illios-admin-wrap h2 {
+    font-size: 1.5em;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+/* Section Descriptions */
+.illios-admin-wrap .description {
+    font-size: 0.95em;
+    color: #555;
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
+/* Input Fields */
+.illios-admin-wrap input[type="text"],
+.illios-admin-wrap input[type="password"],
+.illios-admin-wrap input[type="number"],
+.illios-admin-wrap textarea {
+    width: 100%;
+    max-width: 400px;
+    padding: 6px 8px;
+    font-size: 1em;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.illios-admin-wrap input[disabled],
+.illios-admin-wrap textarea[disabled] {
+    background-color: #f9f9f9;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* Checkboxes */
+.illios-admin-wrap input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.illios-admin-wrap label {
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.illios-admin-wrap label[style*="cursor: not-allowed;"] {
+    cursor: not-allowed;
+    color: #999;
+}
+
+/* Buttons */
+.illios-admin-wrap .button {
+    margin-right: 10px;
+    margin-top: 6px;
+}
+
+.illios-admin-wrap .button-primary {
+    background-color: #0073aa;
+    border-color: #0073aa;
+    color: #fff;
+    text-shadow: none;
+}
+
+.illios-admin-wrap .button-primary:hover {
+    background-color: #006799;
+    border-color: #006799;
+    color: #fff;
+}
+
+.illios-admin-wrap .button-secondary {
+    background-color: #f1f1f1;
+    border-color: #ccc;
+    color: #333;
+}
+
+.illios-admin-wrap .button-secondary:hover {
+    background-color: #e2e2e2;
+    border-color: #bbb;
+}
+
+/* Fieldset / Card Sections */
+.illios-admin-wrap .illios-card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Notices */
+.illios-admin-wrap .notice {
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid;
+    border-radius: 4px;
+}
+
+.illios-admin-wrap .notice-success {
+    background-color: #dff0d8;
+    border-color: #46b450;
+    color: #3c763d;
+}
+
+.illios-admin-wrap .notice-error {
+    background-color: #f8d7da;
+    border-color: #d63638;
+    color: #842029;
+}
+
+.illios-admin-wrap .notice p {
+    margin: 0;
+}
+
+/* Disable/Enable opacity for fields dynamically */
+.illios-admin-wrap .cloudflare-field[disabled],
+.illios-admin-wrap .varnish-field[disabled],
+.illios-admin-wrap .apo-field[disabled] {
+    opacity: 0.5;
+}
+
+/* Advanced buttons section */
+.illios-admin-wrap .cloudflare-advanced-btn {
+    margin-top: 10px;
+}
+
+/* Global Dev Mode Status */
+.illios-admin-wrap #global-dev-mode-status {
+    display: none;
+    border-left: 4px solid #d63638;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.illios-admin-wrap #global-dev-mode-info {
+    font-size: 0.95em;
+}
