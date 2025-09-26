@@ -243,3 +243,53 @@ span[style*="font-size: 1.2em"] {
     font-size: 1.2em;
     font-weight: 600;
 }
+
+/* Section wrapper styling */
+.illios-section {
+    margin: 30px 0;
+    background: transparent;
+    padding: 20px 0;
+}
+
+.illios-section h2 {
+    margin: 0 0 10px 0;
+    padding: 0;
+    font-size: 1.3em;
+    color: #23282d;
+}
+
+.illios-section .section-description {
+    margin-bottom: 20px;
+}
+
+.illios-section .section-description p {
+    margin: 5px 0;
+    color: #646970;
+}
+
+/* Cloudflare branded section */
+.illios-cloudflare-section {
+    border-left: 4px solid #e5892b;
+    padding-left: 20px;
+    background: linear-gradient(90deg, rgba(229, 137, 43, 0.02) 0%, transparent 400px);
+}
+
+/* APO section (also Cloudflare branded) */
+.illios-apo-section {
+    border-left: 4px solid #e5892b;
+    padding-left: 20px;
+    background: linear-gradient(90deg, rgba(229, 137, 43, 0.02) 0%, transparent 400px);
+}
+
+/* Varnish branded section */
+.illios-varnish-section {
+    border-left: 4px solid #7e549b;
+    padding-left: 20px;
+    background: linear-gradient(90deg, rgba(126, 84, 155, 0.02) 0%, transparent 400px);
+}
+
+/* Make sure form tables inside sections don't have extra margins */
+.illios-section .form-table {
+    margin-top: 0;
+    background: transparent;
+}

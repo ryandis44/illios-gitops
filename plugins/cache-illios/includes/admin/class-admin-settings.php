@@ -80,8 +80,8 @@ class Illios_Cache_Admin_Settings {
     private function register_global_dev_mode_section() {
         add_settings_section(
             'global_dev_mode_section',
-            'Global Development Mode',
-            array($this, 'global_dev_mode_section_info'),
+            '', // Empty title since we handle it in template
+            null, // No callback needed
             'illios-cache-admin'
         );
 
@@ -97,8 +97,8 @@ class Illios_Cache_Admin_Settings {
     private function register_cloudflare_section() {
         add_settings_section(
             'cloudflare_section',
-            '<span style="font-size: 1.2em;">Cloudflare Settings</span>',
-            array($this, 'cloudflare_section_info'),
+            '', // Empty title since we handle it in template
+            null, // No callback needed
             'illios-cache-admin'
         );
 
@@ -138,8 +138,8 @@ class Illios_Cache_Admin_Settings {
     private function register_apo_section() {
         add_settings_section(
             'apo_section',
-            'Automatic Platform Optimization (APO)',
-            array($this, 'apo_section_info'),
+            '', // Empty title since we handle it in template
+            null, // No callback needed
             'illios-cache-admin'
         );
 
@@ -163,8 +163,8 @@ class Illios_Cache_Admin_Settings {
     private function register_varnish_section() {
         add_settings_section(
             'varnish_section',
-            '<span style="font-size: 1.2em;">Varnish Settings</span>',
-            array($this, 'varnish_section_info'),
+            '', // Empty title since we handle it in template
+            null, // No callback needed
             'illios-cache-admin'
         );
 
@@ -196,8 +196,8 @@ class Illios_Cache_Admin_Settings {
     private function register_auto_purge_section() {
         add_settings_section(
             'auto_purge_section',
-            'Auto Purge Settings',
-            array($this, 'auto_purge_section_info'),
+            '', // Empty title since we handle it in template
+            null, // No callback needed
             'illios-cache-admin'
         );
 
