@@ -1,23 +1,22 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
 
-$field_id      = $field['id'] ?? '';
-$field_name    = $field['name'] ?? '';
-$field_label   = $field['label'] ?? '';
-$field_desc    = $field['description'] ?? '';
-$field_value   = $field['value'] ?? 0;
-$field_disabled = ! empty( $field['disabled'] ) ? 'disabled' : '';
+$id = $args['id'] ?? '';
+$name = $args['name'] ?? '';
+$value = isset($args['value']) && $args['value'] ? 'checked' : '';
+$label = $args['label'] ?? '';
+$description = $args['description'] ?? '';
+$disabled = isset($args['disabled']) && $args['disabled'] ? 'disabled' : '';
+$class = $args['class'] ?? '';
+$label_style = $disabled ? 'style="color: #999; cursor: not-allowed;"' : '';
 ?>
 
-<input 
-    type="checkbox" 
-    id="<?php echo esc_attr($field_id); ?>" 
-    name="<?php echo esc_attr($field_name); ?>" 
-    value="1"
-    <?php checked( $field_value, 1 ); ?>
-    <?php echo $field_disabled; ?>
+<input type="checkbox" id="<?php echo esc_attr($id); ?>" 
+       name="<?php echo esc_attr($name); ?>" 
+       value="1" 
+       <?php echo $value; ?> 
+       <?php echo $disabled; ?> 
+       <?php echo $class; ?>
 />
-<label for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field_label); ?></label>
-<?php if ( $field_desc ) : ?>
-    <p class="description"><?php echo esc_html($field_desc); ?></p>
-<?php endif; ?>
+<label for="<?php echo esc_attr($id); ?>" <?php echo $label_style; ?>><?php echo esc_html($label); ?></label>
+<?php if ($description) echo wp_kses_post($description); ?>

@@ -1,145 +1,159 @@
-/* General Admin Page */
-.illios-admin-wrap {
+/* General Admin Page - matching original wrap structure */
+.wrap {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 20px;
+    margin: 20px 0;
 }
 
-/* Headings */
-.illios-admin-wrap h1 {
-    font-size: 2em;
-    margin-bottom: 1em;
-}
-
-.illios-admin-wrap h2 {
-    font-size: 1.5em;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-}
-
-/* Section Descriptions */
-.illios-admin-wrap .description {
-    font-size: 0.95em;
-    color: #555;
-    margin-top: 4px;
-    margin-bottom: 12px;
-}
-
-/* Input Fields */
-.illios-admin-wrap input[type="text"],
-.illios-admin-wrap input[type="password"],
-.illios-admin-wrap input[type="number"],
-.illios-admin-wrap textarea {
-    width: 100%;
-    max-width: 400px;
-    padding: 6px 8px;
-    font-size: 1em;
+/* Card sections - preserving original card styling */
+.card {
+    background: #fff;
     border: 1px solid #ccd0d4;
-    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 20px;
+    position: relative;
+    border-radius: 3px;
+}
+
+.card h2 {
+    margin: 0 0 1em 0;
+    font-size: 1.3em;
+    padding: 0;
+}
+
+.card p {
+    margin: 0 0 1em 0;
+}
+
+/* Button styling - preserving original WordPress admin styles */
+.button {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 13px;
+    height: 28px;
+    line-height: 26px;
+    margin: 0;
+    padding: 0 10px 1px;
+    text-decoration: none;
+    white-space: nowrap;
     box-sizing: border-box;
 }
 
-.illios-admin-wrap input[disabled],
-.illios-admin-wrap textarea[disabled] {
-    background-color: #f9f9f9;
-    color: #999;
-    cursor: not-allowed;
-}
-
-/* Checkboxes */
-.illios-admin-wrap input[type="checkbox"] {
-    margin-right: 8px;
-}
-
-.illios-admin-wrap label {
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.illios-admin-wrap label[style*="cursor: not-allowed;"] {
-    cursor: not-allowed;
-    color: #999;
-}
-
-/* Buttons */
-.illios-admin-wrap .button {
-    margin-right: 10px;
-    margin-top: 6px;
-}
-
-.illios-admin-wrap .button-primary {
-    background-color: #0073aa;
+.button-primary {
+    background: #0073aa;
     border-color: #0073aa;
     color: #fff;
-    text-shadow: none;
 }
 
-.illios-admin-wrap .button-primary:hover {
-    background-color: #006799;
+.button-primary:hover {
+    background: #006799;
     border-color: #006799;
-    color: #fff;
 }
 
-.illios-admin-wrap .button-secondary {
-    background-color: #f1f1f1;
-    border-color: #ccc;
-    color: #333;
+.button-secondary {
+    background: #f3f5f6;
+    border-color: #c3c4c7;
+    color: #50575e;
 }
 
-.illios-admin-wrap .button-secondary:hover {
-    background-color: #e2e2e2;
-    border-color: #bbb;
+.button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #1d2327;
 }
 
-/* Fieldset / Card Sections */
-.illios-admin-wrap .illios-card {
+/* Input field styling to match WordPress admin */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
     background-color: #fff;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 15px 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    color: #32373c;
+    outline: 0;
+    transition: .05s border-color ease-in-out;
+    border-radius: 3px;
+    padding: 3px 5px;
+    font-size: 14px;
+    line-height: 2.14285714;
+    box-sizing: border-box;
 }
 
-/* Notices */
-.illios-admin-wrap .notice {
-    padding: 10px 15px;
-    margin-bottom: 20px;
-    border-left: 4px solid;
-    border-radius: 4px;
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
 }
 
-.illios-admin-wrap .notice-success {
-    background-color: #dff0d8;
-    border-color: #46b450;
-    color: #3c763d;
+.regular-text {
+    width: 25em;
 }
 
-.illios-admin-wrap .notice-error {
-    background-color: #f8d7da;
-    border-color: #d63638;
-    color: #842029;
+.small-text {
+    width: 6em;
 }
 
-.illios-admin-wrap .notice p {
-    margin: 0;
+.large-text {
+    width: 99%;
 }
 
-/* Disable/Enable opacity for fields dynamically */
-.illios-admin-wrap .cloudflare-field[disabled],
-.illios-admin-wrap .varnish-field[disabled],
-.illios-admin-wrap .apo-field[disabled] {
-    opacity: 0.5;
+/* Checkbox styling */
+input[type="checkbox"] {
+    margin-right: 6px;
+    vertical-align: middle;
 }
 
-/* Advanced buttons section */
-.illios-admin-wrap .cloudflare-advanced-btn {
+input[type="checkbox"] + label {
+    vertical-align: middle;
+    font-weight: 400;
+}
+
+/* Field descriptions */
+.description {
+    color: #646970;
+    font-size: 13px;
+    font-style: normal;
+    margin: 5px 0 0 0;
+    display: block;
+}
+
+/* Section styling to match WordPress admin */
+h2 {
+    font-size: 1.3em;
+    margin: 0.83em 0;
+    color: #23282d;
+}
+
+/* Disabled field styling */
+input[disabled],
+textarea[disabled] {
+    background-color: #f9f9f9;
+    border-color: #ddd;
+    color: #a0a5aa;
+    cursor: default;
+}
+
+/* Advanced controls styling */
+.cloudflare-advanced-btn {
     margin-top: 10px;
+    margin-right: 10px;
 }
 
-/* Global Dev Mode Status */
-.illios-admin-wrap #global-dev-mode-status {
+/* Field-specific classes for dynamic styling */
+.cloudflare-field[disabled],
+.varnish-field[disabled],
+.apo-field[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Global Dev Mode Status Display */
+#global-dev-mode-status {
     display: none;
     border-left: 4px solid #d63638;
     background: #fff3cd;
@@ -149,6 +163,83 @@
     border-radius: 4px;
 }
 
-.illios-admin-wrap #global-dev-mode-info {
+#global-dev-mode-info {
     font-size: 0.95em;
+    margin: 0;
+}
+
+/* Notice styling - matching WordPress admin */
+.notice {
+    background: #fff;
+    border-left: 4px solid #fff;
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
+    margin: 5px 15px 2px;
+    padding: 1px 12px;
+}
+
+.notice-success {
+    border-left-color: #46b450;
+}
+
+.notice-error {
+    border-left-color: #dc3232;
+}
+
+.notice p {
+    margin: 0.5em 0;
+    padding: 2px;
+}
+
+.is-dismissible {
+    position: relative;
+    padding-right: 38px;
+}
+
+/* Table form styling to match WordPress admin */
+.form-table {
+    border-collapse: collapse;
+    margin-top: 0.5em;
+    width: 100%;
+}
+
+.form-table th {
+    color: #23282d;
+    font-weight: 400;
+    padding: 20px 10px 20px 0;
+    text-align: left;
+    vertical-align: top;
+    width: 200px;
+}
+
+.form-table td {
+    padding: 15px 10px;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.form-table tr {
+    border-bottom: 1px solid #f1f1f1;
+}
+
+/* Advanced Cloudflare controls section styling */
+div[style*="margin-top: 15px"] {
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+/* Warning boxes */
+div[style*="background: #fff3cd"] {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    color: #856404;
+}
+
+/* Section headers with larger font size */
+span[style*="font-size: 1.2em"] {
+    font-size: 1.2em;
+    font-weight: 600;
 }

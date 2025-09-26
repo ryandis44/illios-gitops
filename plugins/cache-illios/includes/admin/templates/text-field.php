@@ -1,26 +1,24 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
+if (!defined('ABSPATH')) exit;
 
-function illios_text_field( $args ) {
-    $id = $args['id'];
-    $name = $args['name'];
-    $value = isset( $args['value'] ) ? esc_attr( $args['value'] ) : '';
-    $description = isset( $args['description'] ) ? $args['description'] : '';
-    $disabled = isset( $args['disabled'] ) && $args['disabled'] ? 'disabled' : '';
-    $class = isset( $args['class'] ) ? esc_attr( $args['class'] ) : 'regular-text';
+$id = $args['id'] ?? '';
+$name = $args['name'] ?? '';
+$value = $args['value'] ?? '';
+$type = $args['type'] ?? 'text';
+$description = $args['description'] ?? '';
+$disabled = isset($args['disabled']) && $args['disabled'] ? 'disabled' : '';
+$class = $args['class'] ?? 'class="regular-text"';
+$min = isset($args['min']) ? 'min="' . esc_attr($args['min']) . '"' : '';
+$max = isset($args['max']) ? 'max="' . esc_attr($args['max']) . '"' : '';
+?>
 
-    printf(
-        '<input type="text" id="%1$s" name="%2$s" value="%3$s" class="%4$s" %5$s />',
-        esc_attr( $id ),
-        esc_attr( $name ),
-        $value,
-        $class,
-        $disabled
-    );
-
-    if ( $description ) {
-        echo '<p class="description">' . esc_html( $description ) . '</p>';
-    }
-}
+<input type="<?php echo esc_attr($type); ?>" 
+       id="<?php echo esc_attr($id); ?>" 
+       name="<?php echo esc_attr($name); ?>" 
+       value="<?php echo esc_attr($value); ?>" 
+       <?php echo $class; ?>
+       <?php echo $disabled; ?>
+       <?php echo $min; ?>
+       <?php echo $max; ?>
+/>
+<?php if ($description) echo '<p class="description">' . wp_kses_post($description) . '</p>'; ?>
