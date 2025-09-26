@@ -102,7 +102,7 @@ if ( $is_codespaces ) {
 	define( 'WP_HOME', 'https://' . $codespace_name . '-8080.' . $codespace_domain );
 } else {
 	$site_domain = 'localhost';
-	define( 'WP_HOME', 'http://localhost:8080' );
+	define( 'WP_HOME', 'http://localhost:8082' );
 }
 
 defined( 'WP_SITEURL' ) || define( 'WP_SITEURL', rtrim( WP_HOME, '/' ) . '/wp' );

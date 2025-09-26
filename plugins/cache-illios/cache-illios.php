@@ -14,7 +14,7 @@
  * Plugin Name:       Illios Digital LLC Cache
  * Plugin URI:        https://github.com/your-repo/cache-illios
  * Description:       Combined Cloudflare (with APO support) and Varnish cache management for optimal performance
- * Version:           2.0.0
+ * Version:           0.1.0
  * Requires at least: 5.0
  * Requires PHP:      7.4
  * Author:            Illios Digital LLC
@@ -80,9 +80,6 @@ class Illios_Cache_Plugin {
         
         // Add Cloudflare headers for APO detection
         add_action('wp_head', array($this, 'add_apo_detection_meta'), 1);
-
-        // Schedule automatic dev mode disable
-        add_action('illios_cache_disable_dev_mode', array($this, 'handle_auto_disable_dev_mode'));
     }
     
     private function load_dependencies() {
@@ -181,21 +178,17 @@ class Illios_Cache_Plugin {
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
         $varnish_handler = new Illios_Cache_Varnish_Handler();
 
-        // Get related URLs for both services
-        $cf_urls = $cf_handler->get_post_related_urls($post_id);
-        $varnish_urls = $varnish_handler->get_post_related_urls($post_id);
-
         // Purge Cloudflare
-        if ($cf_handler->is_enabled() && !empty($cf_urls)) {
-            $cf_result = $cf_handler->purge_urls($cf_urls);
+        if ($cf_handler->is_enabled()) {
+            $cf_result = $cf_handler->purge_post($post_id);
             if (is_wp_error($cf_result)) {
                 error_log('Cloudflare post purge failed: ' . $cf_result->get_error_message());
             }
         }
 
         // Purge Varnish  
-        if ($varnish_handler->is_enabled() && !empty($varnish_urls)) {
-            $varnish_result = $varnish_handler->purge_urls($varnish_urls);
+        if ($varnish_handler->is_enabled()) {
+            $varnish_result = $varnish_handler->purge_post($post_id);
             if (is_wp_error($varnish_result)) {
                 error_log('Varnish post purge failed: ' . $varnish_result->get_error_message());
             }
@@ -326,8 +319,7 @@ class Illios_Cache_Plugin {
 
         return $status;
     }
-
-    /**
+/**
      * Add admin bar menu for quick actions
      */
     public function add_admin_bar_menu($wp_admin_bar) {
@@ -413,14 +405,6 @@ class Illios_Cache_Plugin {
 
         wp_redirect($redirect_url);
         exit;
-    }
-
-    /**
-     * Handle automatic development mode disable
-     */
-    public function handle_auto_disable_dev_mode() {
-        $cf_handler = new Illios_Cache_Cloudflare_Handler();
-        $cf_handler->auto_disable_dev_mode();
     }
 
     /**

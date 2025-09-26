@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
         
         <!-- Global Dev Mode Section -->
         <div class="illios-section">
-            <h2>Global Development Mode</h2>
+            <h2>Development Mode</h2>
             <table class="form-table">
                 <?php do_settings_fields('illios-cache-admin', 'global_dev_mode_section'); ?>
             </table>
@@ -29,10 +29,12 @@ if (!defined('ABSPATH')) {
             <table class="form-table">
                 <?php do_settings_fields('illios-cache-admin', 'cloudflare_section'); ?>
             </table>
-        </div>
 
+            <br/>
+            <br/>
+            <br/>
         <!-- APO Section (part of Cloudflare) -->
-        <div class="illios-section illios-apo-section">
+
             <h2>Cloudflare Automatic Platform Optimization (APO)</h2>
             <div class="section-description">
                 <p>Automatic Platform Optimization caches your entire WordPress site on Cloudflare's edge network for maximum performance. <strong>Note:</strong> APO costs $5/month on Free plans or is included with Pro+ plans.</p>

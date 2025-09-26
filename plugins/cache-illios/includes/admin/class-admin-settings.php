@@ -22,11 +22,12 @@ class Illios_Cache_Admin_Settings {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         
         // AJAX handlers
-        add_action('wp_ajax_illios_cache_test_connection', array($this, 'handle_test_connection'));
+        add_action('wp_ajax_illios_cache_test_connection', array($this, 'handle_test_cloudflare_connection'));
         add_action('wp_ajax_illios_cache_apply_wp_settings', array($this, 'handle_apply_wp_settings'));
         add_action('wp_ajax_illios_cache_toggle_apo', array($this, 'handle_toggle_apo'));
+        add_action('wp_ajax_illios_cache_test_varnish_connection', array($this, 'handle_test_varnish_connection'));
         add_action('wp_ajax_illios_cache_toggle_dev_mode', array($this, 'handle_toggle_dev_mode'));
-        add_action('wp_ajax_illios_cache_get_dev_mode_status', array($this, 'handle_get_dev_mode_status'));
+        add_action('wp_ajax_illios_cache_get_dev_mode_status', array($this, 'handle_get_dev_mode'));
         
         $this->options = get_option('illios_cache_settings', array());
         $this->template_path = plugin_dir_path(__FILE__) . 'templates/';
@@ -58,7 +59,7 @@ class Illios_Cache_Admin_Settings {
             'nonce_test' => wp_create_nonce('illios_cache_test'),
             'nonce_wp' => wp_create_nonce('illios_cache_wp_settings'),
             'nonce_dev_mode' => wp_create_nonce('illios_cache_dev_mode'),
-            'nonce_dev_mode_status' => wp_create_nonce('illios_cache_dev_mode_status'),
+            'nonce_dev_mode_status' => wp_create_nonce('illios_cache_dev_mode'),
             'nonce_apo' => wp_create_nonce('illios_cache_apo')
         ));
     }
@@ -188,6 +189,14 @@ class Illios_Cache_Admin_Settings {
             'varnish_timeout',
             'Request Timeout (seconds)',
             array($this, 'varnish_timeout_callback'),
+            'illios-cache-admin',
+            'varnish_section'
+        );
+
+        add_settings_field(
+            'varnish_advanced_controls',
+            '',
+            array($this, 'varnish_advanced_controls_callback'),
             'illios-cache-admin',
             'varnish_section'
         );
@@ -477,6 +486,22 @@ class Illios_Cache_Admin_Settings {
         ));
     }
 
+    public function varnish_advanced_controls_callback() {
+        $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
+        ?>
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+            <?php
+            $this->render_field('button-field.php', array(
+                'id' => 'test-varnish',
+                'label' => 'Test Connection',
+                'class' => 'button button-secondary varnish-advanced-btn',
+                'disabled' => $disabled
+            ));
+            ?>
+        </div>
+        <?php
+    }
+
     public function purge_on_post_save_callback() {
         $this->render_field('checkbox-field.php', array(
             'id' => 'purge_on_post_save',
@@ -495,8 +520,8 @@ class Illios_Cache_Admin_Settings {
         ));
     }
 
-    // AJAX Handlers (unchanged from original)
-    public function handle_test_connection() {
+    // AJAX Handlers
+    public function handle_test_cloudflare_connection() {
         if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_test')) {
             wp_send_json_error('Security check failed');
         }
@@ -535,7 +560,7 @@ class Illios_Cache_Admin_Settings {
     }
 
     public function handle_get_dev_mode_status() {
-        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_dev_mode_status')) {
+        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_dev_mode')) {
             wp_send_json_error('Security check failed');
         }
         
@@ -544,7 +569,7 @@ class Illios_Cache_Admin_Settings {
         }
 
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
-        $result = $cf_handler->get_development_mode_status();
+        $result = $cf_handler->get_development_mode();
         
         if (is_wp_error($result)) {
             wp_send_json_error($result->get_error_message());
@@ -593,6 +618,55 @@ class Illios_Cache_Admin_Settings {
         wp_send_json_success($result);
     }
 
+    public function handle_test_varnish_connection() {
+        // Add debug logging here too
+        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
+        file_put_contents($debug_file, "AJAX handler called\n", FILE_APPEND);
+        
+        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_test')) {
+            file_put_contents($debug_file, "Nonce check failed\n", FILE_APPEND);
+            wp_send_json_error('Security check failed');
+        }
+        
+        if (!current_user_can('manage_options')) {
+            file_put_contents($debug_file, "Permission check failed\n", FILE_APPEND);
+            wp_send_json_error('Insufficient permissions');
+        }
+
+        file_put_contents($debug_file, "Creating Varnish handler\n", FILE_APPEND);
+        $varnish_handler = new Illios_Cache_Varnish_Handler();
+        $results = $varnish_handler->test_connection();
+        
+        file_put_contents($debug_file, "Test results: " . print_r($results, true) . "\n", FILE_APPEND);
+        
+        if (is_wp_error($results)) {
+            file_put_contents($debug_file, "WP Error: " . $results->get_error_message() . "\n", FILE_APPEND);
+            wp_send_json_error($results->get_error_message());
+        }
+        
+        // Check if any servers failed
+        $failed_servers = array();
+        $success_messages = array();
+        
+        foreach ($results as $server => $result) {
+            if ($result['success']) {
+                $success_messages[] = "{$server}: {$result['message']}";
+            } else {
+                $failed_servers[] = "{$server}: {$result['message']}";
+            }
+        }
+        
+        if (!empty($failed_servers)) {
+            $error_message = 'Server test failures: ' . implode('; ', $failed_servers);
+            file_put_contents($debug_file, "Sending error: {$error_message}\n", FILE_APPEND);
+            wp_send_json_error($error_message);
+        } else {
+            $success_message = 'All servers verified: ' . implode('; ', $success_messages);
+            file_put_contents($debug_file, "Sending success: {$success_message}\n", FILE_APPEND);
+            wp_send_json_success($success_message);
+        }
+    }
+
     public function handle_toggle_dev_mode() {
         if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_dev_mode')) {
             wp_send_json_error('Security check failed');
@@ -602,20 +676,26 @@ class Illios_Cache_Admin_Settings {
             wp_send_json_error('Insufficient permissions');
         }
 
+        // Get current WordPress setting (our source of truth)
+        $is_enabled = get_option('illios_cache_cloudflare_dev_mode_enabled', false);
+        
+        // Toggle it
+        $new_state = !$is_enabled;
+        
+        // Update WordPress option first
+        update_option('illios_cache_cloudflare_dev_mode_enabled', $new_state);
+        
+        // Try to update Cloudflare
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
-        $current_status = $cf_handler->get_development_mode();
+        $result = $cf_handler->set_development_mode($new_state);
         
-        if (is_wp_error($current_status)) {
-            wp_send_json_error($current_status->get_error_message());
-        }
-
-        $is_enabled = isset($current_status['result']['value']) && $current_status['result']['value'] === 'on';
-        $result = $cf_handler->set_development_mode(!$is_enabled);
+        $message = $new_state ? 'Development mode enabled.' : 'Development mode disabled.';
         
+        // Note: We don't fail if Cloudflare API fails - WordPress state is updated regardless
         if (is_wp_error($result)) {
-            wp_send_json_error($result->get_error_message());
+            $message .= ' (Note: Cloudflare API error - may need manual sync)';
         }
         
-        wp_send_json_success($result);
+        wp_send_json_success(['message' => $message]);
     }
 }

@@ -168,13 +168,25 @@ textarea[disabled] {
     margin: 0;
 }
 
-/* Notice styling - matching WordPress admin */
+/* Sticky Notification Container */
+.sticky-notice-container {
+    position: fixed;
+    top: 32px; /* Account for WordPress admin bar */
+    left: 0;
+    right: 0;
+    z-index: 999999;
+    pointer-events: none; /* Allow clicks through empty space */
+}
+
+/* Notice styling - matching WordPress admin with sticky positioning */
 .notice {
     background: #fff;
     border-left: 4px solid #fff;
-    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1);
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1), 0 4px 12px 0 rgba(0,0,0,.1);
     margin: 5px 15px 2px;
     padding: 1px 12px;
+    pointer-events: auto; /* Re-enable clicks on the notice itself */
+    border-radius: 4px;
 }
 
 .notice-success {
@@ -193,6 +205,60 @@ textarea[disabled] {
 .is-dismissible {
     position: relative;
     padding-right: 38px;
+}
+
+/* Dismiss button for sticky notices */
+.notice-dismiss {
+    position: absolute;
+    top: 0;
+    right: 1px;
+    border: none;
+    margin: 0;
+    padding: 9px;
+    background: none;
+    color: #787c82;
+    cursor: pointer;
+    width: 38px;
+    height: 38px;
+    text-align: center;
+}
+
+.notice-dismiss:before {
+    content: '\f153';
+    display: inline-block;
+    font: normal 16px/1 dashicons;
+    speak: never;
+    height: 16px;
+    text-align: center;
+    width: 16px;
+    vertical-align: middle;
+}
+
+.notice-dismiss:hover {
+    color: #c3c4c7;
+}
+
+/* Animation for sticky notices */
+.sticky-notice-enter {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.sticky-notice-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+    transition: all 0.3s ease-in-out;
+}
+
+.sticky-notice-exit {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.sticky-notice-exit-active {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
 }
 
 /* Table form styling to match WordPress admin */
@@ -274,13 +340,6 @@ span[style*="font-size: 1.2em"] {
     background: linear-gradient(90deg, rgba(229, 137, 43, 0.02) 0%, transparent 400px);
 }
 
-/* APO section (also Cloudflare branded) */
-.illios-apo-section {
-    border-left: 4px solid #e5892b;
-    padding-left: 20px;
-    background: linear-gradient(90deg, rgba(229, 137, 43, 0.02) 0%, transparent 400px);
-}
-
 /* Varnish branded section */
 .illios-varnish-section {
     border-left: 4px solid #7e549b;
@@ -292,4 +351,22 @@ span[style*="font-size: 1.2em"] {
 .illios-section .form-table {
     margin-top: 0;
     background: transparent;
+}
+
+.varnish-advanced-btn {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+/* Responsive adjustments for sticky notices */
+@media screen and (max-width: 782px) {
+    .sticky-notice-container {
+        top: 46px; /* Adjust for mobile WordPress admin bar */
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .sticky-notice-container {
+        top: 0; /* No admin bar on very small screens */
+    }
 }

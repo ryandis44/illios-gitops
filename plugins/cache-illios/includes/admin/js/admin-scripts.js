@@ -1,4 +1,9 @@
 jQuery(document).ready(function ($) {
+  // Create sticky notice container on page load
+  if (!$(".sticky-notice-container").length) {
+    $("body").append('<div class="sticky-notice-container"></div>');
+  }
+
   // Field Toggle Functions
   function toggleCloudflareFields() {
     var enabled = $("#cloudflare_enabled").is(":checked");
@@ -76,10 +81,15 @@ jQuery(document).ready(function ($) {
 
   // Advanced Cloudflare management
   $("#test-cloudflare").click(function () {
-    testConnection();
+    testCloudflareConnection();
   });
   $("#apply-wp-settings").click(function () {
     applyWordPressSettings();
+  });
+
+  // Advanced Varnish management
+  $("#test-varnish").click(function () {
+    testVarnishConnection();
   });
 
   // Dev mode functionality
@@ -103,15 +113,15 @@ jQuery(document).ready(function ($) {
       },
       function (response) {
         if (response.success) {
-          showNotice("Cache purged successfully!", "success");
+          showStickyNotice("Cache purged successfully!", "success");
         } else {
-          showNotice("Error purging cache: " + response.data, "error");
+          showStickyNotice("Error purging cache: " + response.data, "error");
         }
       }
     );
   }
 
-  function testConnection() {
+  function testCloudflareConnection() {
     $.post(
       illios_cache_ajax.ajax_url,
       {
@@ -120,9 +130,9 @@ jQuery(document).ready(function ($) {
       },
       function (response) {
         if (response.success) {
-          showNotice("Connection successful!", "success");
+          showStickyNotice("Connection successful!", "success");
         } else {
-          showNotice("Connection failed: " + response.data, "error");
+          showStickyNotice("Connection failed: " + response.data, "error");
         }
       }
     );
@@ -137,9 +147,35 @@ jQuery(document).ready(function ($) {
       },
       function (response) {
         if (response.success) {
-          showNotice("WordPress settings applied successfully!", "success");
+          showStickyNotice(
+            "WordPress settings applied successfully!",
+            "success"
+          );
         } else {
-          showNotice("Error applying settings: " + response.data, "error");
+          showStickyNotice(
+            "Error applying settings: " + response.data,
+            "error"
+          );
+        }
+      }
+    );
+  }
+
+  function testVarnishConnection() {
+    $.post(
+      illios_cache_ajax.ajax_url,
+      {
+        action: "illios_cache_test_varnish_connection",
+        nonce: illios_cache_ajax.nonce_test,
+      },
+      function (response) {
+        if (response.success) {
+          showStickyNotice("Varnish connection successful!", "success");
+        } else {
+          showStickyNotice(
+            "Varnish connection failed: " + response.data,
+            "error"
+          );
         }
       }
     );
@@ -158,10 +194,10 @@ jQuery(document).ready(function ($) {
       },
       function (response) {
         if (response.success) {
-          showNotice("Development mode toggled successfully!", "success");
+          showStickyNotice("Development mode toggled successfully!", "success");
           updateGlobalDevModeStatus();
         } else {
-          showNotice(
+          showStickyNotice(
             "Error toggling development mode: " + response.data,
             "error"
           );
@@ -238,9 +274,9 @@ jQuery(document).ready(function ($) {
       },
       function (response) {
         if (response.success) {
-          showNotice("APO toggled successfully!", "success");
+          showStickyNotice("APO toggled successfully!", "success");
         } else {
-          showNotice("Error toggling APO: " + response.data, "error");
+          showStickyNotice("Error toggling APO: " + response.data, "error");
         }
       }
     );
@@ -252,22 +288,83 @@ jQuery(document).ready(function ($) {
   // Update dev mode status every minute if enabled
   setInterval(updateGlobalDevModeStatus, 60000);
 
-  // Utility function for notices
-  function showNotice(message, type) {
+  // Enhanced sticky notification function
+  function showStickyNotice(message, type) {
     var noticeClass = type === "error" ? "notice-error" : "notice-success";
-    var notice = $(
-      '<div class="notice ' +
-        noticeClass +
-        ' is-dismissible"><p>' +
-        message +
-        "</p></div>"
-    );
-    $(".wrap h1").after(notice);
+    var noticeId = "notice-" + Date.now();
 
+    var notice = $(
+      '<div id="' +
+        noticeId +
+        '" class="notice ' +
+        noticeClass +
+        ' is-dismissible sticky-notice-enter">' +
+        "<p>" +
+        message +
+        "</p>" +
+        '<button type="button" class="notice-dismiss" aria-label="Dismiss this notice">' +
+        '<span class="screen-reader-text">Dismiss this notice.</span>' +
+        "</button>" +
+        "</div>"
+    );
+
+    // Add to sticky container
+    $(".sticky-notice-container").append(notice);
+
+    // Animate in
     setTimeout(function () {
-      notice.fadeOut(function () {
-        notice.remove();
-      });
+      notice
+        .removeClass("sticky-notice-enter")
+        .addClass("sticky-notice-enter-active");
+    }, 10);
+
+    // Add dismiss functionality
+    notice.find(".notice-dismiss").click(function () {
+      dismissStickyNotice(notice);
+    });
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(function () {
+      dismissStickyNotice(notice);
     }, 5000);
+  }
+
+  // Function to dismiss sticky notices with animation
+  function dismissStickyNotice(notice) {
+    if (notice.length && !notice.hasClass("sticky-notice-exit")) {
+      notice
+        .removeClass("sticky-notice-enter-active")
+        .addClass("sticky-notice-exit sticky-notice-exit-active");
+
+      setTimeout(function () {
+        notice.remove();
+      }, 300);
+    }
+  }
+
+  // Clean up old notices periodically (fallback)
+  setInterval(function () {
+    $(".sticky-notice-container .notice").each(function () {
+      var $notice = $(this);
+      var age =
+        Date.now() - parseInt($notice.attr("id").replace("notice-", ""));
+
+      // Remove notices older than 10 seconds as fallback
+      if (age > 10000) {
+        dismissStickyNotice($notice);
+      }
+    });
+  }, 5000);
+
+  // Handle window resize to adjust sticky container position
+  $(window).on("resize", function () {
+    // Force recalculation of admin bar height if needed
+    var adminBarHeight = $("#wpadminbar").height() || 32;
+    $(".sticky-notice-container").css("top", adminBarHeight + "px");
+  });
+
+  // Legacy function for backward compatibility (still creates sticky notices)
+  function showNotice(message, type) {
+    showStickyNotice(message, type);
   }
 });

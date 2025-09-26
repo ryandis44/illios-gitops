@@ -383,10 +383,14 @@ class Illios_Cache_Varnish_Handler {
      * Test connection to Varnish servers
      */
     public function test_connection() {
+        error_log("Varnish test_connection() called");
+        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
+        file_put_contents($debug_file, "Servers from config: " . print_r($this->servers, true) . "\n", FILE_APPEND);
+        
         if (!$this->is_enabled()) {
             return new WP_Error('varnish_disabled', 'Varnish is not enabled or configured');
         }
-
+        
         $results = array();
         
         foreach ($this->servers as $server) {
@@ -394,24 +398,67 @@ class Illios_Cache_Varnish_Handler {
             $server_parts = parse_url('http://' . $server);
             $host = $server_parts['host'];
             $port = isset($server_parts['port']) ? $server_parts['port'] : 80;
-
-            // Try to connect
-            $connection = @fsockopen($host, $port, $errno, $errstr, $this->timeout);
             
-            if ($connection) {
-                fclose($connection);
-                $results[$server] = array(
+            $results[$server] = $this->test_varnish_purge($host, $port);
+        }
+        
+        return $results;
+    }
+
+    private function test_varnish_purge($host, $port) {
+        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
+        file_put_contents($debug_file, "Testing PURGE method on {$host}:{$port}\n", FILE_APPEND);
+        
+        $url = "http://{$host}:{$port}/";
+        
+        // Test PURGE method - most reliable way to detect Varnish
+        $response = wp_remote_request($url, array(
+            'method' => 'PURGE',
+            'timeout' => $this->timeout,
+            'headers' => array(
+                'Host' => parse_url(home_url(), PHP_URL_HOST)
+            )
+        ));
+        
+        if (is_wp_error($response)) {
+            file_put_contents($debug_file, "PURGE test error: " . $response->get_error_message() . "\n", FILE_APPEND);
+            return array(
+                'success' => false,
+                'message' => 'PURGE test failed: ' . $response->get_error_message()
+            );
+        }
+        
+        $status = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        
+        file_put_contents($debug_file, "PURGE response status: {$status}\n", FILE_APPEND);
+        file_put_contents($debug_file, "PURGE response body: {$body}\n", FILE_APPEND);
+        
+        // Varnish typically returns 200 (success) or 405 (not allowed in ACL) for PURGE
+        if (in_array($status, array(200, 405))) {
+            // Look for Varnish-specific PURGE responses
+            if (stripos($body, 'PURGE') !== false || stripos($body, 'varnish') !== false) {
+                file_put_contents($debug_file, "Varnish detected via PURGE response content\n", FILE_APPEND);
+                return array(
                     'success' => true,
-                    'message' => 'Connection successful'
+                    'message' => 'Varnish detected via PURGE method response'
                 );
-            } else {
-                $results[$server] = array(
-                    'success' => false,
-                    'message' => "Connection failed: {$errstr} ({$errno})"
+            }
+            
+            // Even without specific text, proper PURGE handling suggests Varnish
+            if ($status === 200 || ($status === 405 && stripos($body, 'not allowed') !== false)) {
+                file_put_contents($debug_file, "Varnish likely detected via PURGE method support\n", FILE_APPEND);
+                return array(
+                    'success' => true,
+                    'message' => "PURGE method supported (status: {$status}) - likely Varnish"
                 );
             }
         }
-
-        return $results;
+        
+        file_put_contents($debug_file, "PURGE test failed - status: {$status}, no Varnish indicators\n", FILE_APPEND);
+        return array(
+            'success' => false,
+            'message' => "PURGE not supported (status: {$status}) - no Varnish detected"
+        );
     }
 }

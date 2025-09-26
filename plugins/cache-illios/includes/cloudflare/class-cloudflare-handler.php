@@ -111,7 +111,6 @@ class Illios_Cache_Cloudflare_Handler {
         return $response;
     }
 
-
     /**
      * Get development mode status
      */
@@ -132,7 +131,7 @@ class Illios_Cache_Cloudflare_Handler {
     }
 
     /**
-     * Toggle development mode with automatic 24-hour timeout
+     * Toggle development mode
      */
     public function set_development_mode($enabled = true) {
         if (!$this->is_enabled()) {
@@ -148,87 +147,7 @@ class Illios_Cache_Cloudflare_Handler {
             return $response;
         }
 
-        // If enabling dev mode, schedule automatic disable after 24 hours
-        if ($enabled) {
-            $this->schedule_dev_mode_disable();
-            update_option('illios_cache_dev_mode_enabled_at', time());
-        } else {
-            // If manually disabling, clear the scheduled event
-            wp_clear_scheduled_hook('illios_cache_disable_dev_mode');
-            delete_option('illios_cache_dev_mode_enabled_at');
-        }
-
         return $response;
-    }
-
-    /**
-     * Schedule automatic development mode disable after 24 hours
-     */
-    private function schedule_dev_mode_disable() {
-        // Clear any existing scheduled event first
-        wp_clear_scheduled_hook('illios_cache_disable_dev_mode');
-        
-        // Schedule disable for 24 hours from now
-        wp_schedule_single_event(time() + (24 * HOUR_IN_SECONDS), 'illios_cache_disable_dev_mode');
-    }
-
-    /**
-     * Automatically disable development mode (called by scheduled event)
-     */
-    public function auto_disable_dev_mode() {
-        $result = $this->set_development_mode(false);
-        
-        if (!is_wp_error($result)) {
-            // Log the automatic disable
-            error_log('Illios Cache: Development mode automatically disabled after 24 hours');
-            
-            // Optionally notify admin
-            $this->notify_admin_dev_mode_disabled();
-        }
-    }
-
-    /**
-     * Get development mode status with time remaining
-     */
-    public function get_development_mode_status() {
-        $status = $this->get_development_mode();
-        
-        if (is_wp_error($status)) {
-            return $status;
-        }
-
-        $enabled_at = get_option('illios_cache_dev_mode_enabled_at');
-        $time_remaining = null;
-        
-        if ($enabled_at && isset($status['result']['value']) && $status['result']['value'] === 'on') {
-            $elapsed = time() - $enabled_at;
-            $time_remaining = max(0, (24 * HOUR_IN_SECONDS) - $elapsed);
-        }
-
-        return array(
-            'enabled' => isset($status['result']['value']) && $status['result']['value'] === 'on',
-            'time_remaining' => $time_remaining,
-            'enabled_at' => $enabled_at
-        );
-    }
-
-    /**
-     * Send notification when dev mode is automatically disabled
-     */
-    private function notify_admin_dev_mode_disabled() {
-        $admin_email = get_option('admin_email');
-        $site_name = get_option('blogname');
-        
-        $subject = sprintf('[%s] Development Mode Automatically Disabled', $site_name);
-        $message = sprintf(
-            "Development mode for %s has been automatically disabled after 24 hours.\n\n" .
-            "This is a safety feature to prevent accidentally leaving development mode enabled, " .
-            "which would bypass Cloudflare's cache and impact site performance.\n\n" .
-            "If you need to re-enable development mode, you can do so from the Illios Cache settings page.",
-            home_url()
-        );
-        
-        wp_mail($admin_email, $subject, $message);
     }
 
     /**
@@ -367,27 +286,27 @@ class Illios_Cache_Cloudflare_Handler {
     /**
      * Purge cache by tags (if using Enterprise features)
      */
-    public function purge_by_tags($tags) {
-        if (!$this->is_enabled()) {
-            return new WP_Error('cloudflare_disabled', 'Cloudflare purging is not enabled or configured');
-        }
+    // public function purge_by_tags($tags) {
+    //     if (!$this->is_enabled()) {
+    //         return new WP_Error('cloudflare_disabled', 'Cloudflare purging is not enabled or configured');
+    //     }
 
-        if (empty($tags) || !is_array($tags)) {
-            return new WP_Error('invalid_tags', 'Tags must be provided as an array');
-        }
+    //     if (empty($tags) || !is_array($tags)) {
+    //         return new WP_Error('invalid_tags', 'Tags must be provided as an array');
+    //     }
 
-        $endpoint = "zones/{$this->zone_id}/purge_cache";
-        $body = json_encode(array('tags' => $tags));
+    //     $endpoint = "zones/{$this->zone_id}/purge_cache";
+    //     $body = json_encode(array('tags' => $tags));
 
-        $response = $this->make_api_request($endpoint, 'POST', $body);
+    //     $response = $this->make_api_request($endpoint, 'POST', $body);
 
-        if (is_wp_error($response)) {
-            error_log('Cloudflare purge by tags failed: ' . $response->get_error_message());
-            return $response;
-        }
+    //     if (is_wp_error($response)) {
+    //         error_log('Cloudflare purge by tags failed: ' . $response->get_error_message());
+    //         return $response;
+    //     }
 
-        return $response;
-    }
+    //     return $response;
+    // }
 
     /**
      * Verify API credentials and zone access
@@ -504,11 +423,24 @@ class Illios_Cache_Cloudflare_Handler {
         return array_unique(array_filter($urls));
     }
 
-    public function can_enable_apo() {
-    $plan = $this->get_account_plan(); // fetch plan info via API
-    // Free plan = 0, Pro+ = 1+
-    return $plan !== 'free';
-}
+    /**
+     * Purge cache for a specific post and all related URLs
+     */
+    public function purge_post($post_id) {
+        $urls_to_purge = $this->get_post_related_urls($post_id);
+        
+        if (!empty($urls_to_purge)) {
+            return $this->purge_urls($urls_to_purge);
+        }
+        
+        return array();
+    }
+
+    // public function can_enable_apo() {
+    //     $plan = $this->get_account_plan(); // fetch plan info via API
+    //     // Free plan = 0, Pro+ = 1+
+    //     return $plan !== 'free';
+    // }
 
     public function get_account_plan() {
         if (empty($this->api_token)) {
@@ -524,7 +456,6 @@ class Illios_Cache_Cloudflare_Handler {
 
         return strtolower($response['result']['plan'] ?? 'free');
     }
-
 
     /**
      * Make API request to Cloudflare
