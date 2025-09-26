@@ -20,6 +20,7 @@ class Illios_Cache_Admin_Settings {
         add_action('admin_init', array($this, 'admin_init'));
         add_action('admin_menu', array($this, 'add_options_page'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        add_action('update_option_illios_cache_settings', array($this, 'sync_apo_on_settings_update'), 10, 2);
         
         // AJAX handlers
         add_action('wp_ajax_illios_cache_test_connection', array($this, 'handle_test_cloudflare_connection'));
@@ -27,7 +28,7 @@ class Illios_Cache_Admin_Settings {
         add_action('wp_ajax_illios_cache_toggle_apo', array($this, 'handle_toggle_apo'));
         add_action('wp_ajax_illios_cache_test_varnish_connection', array($this, 'handle_test_varnish_connection'));
         add_action('wp_ajax_illios_cache_toggle_dev_mode', array($this, 'handle_toggle_dev_mode'));
-        add_action('wp_ajax_illios_cache_get_dev_mode_status', array($this, 'handle_get_dev_mode'));
+        add_action('wp_ajax_illios_cache_get_dev_mode_status', array($this, 'handle_get_dev_mode_status'));
         
         $this->options = get_option('illios_cache_settings', array());
         $this->template_path = plugin_dir_path(__FILE__) . 'templates/';
@@ -59,7 +60,7 @@ class Illios_Cache_Admin_Settings {
             'nonce_test' => wp_create_nonce('illios_cache_test'),
             'nonce_wp' => wp_create_nonce('illios_cache_wp_settings'),
             'nonce_dev_mode' => wp_create_nonce('illios_cache_dev_mode'),
-            'nonce_dev_mode_status' => wp_create_nonce('illios_cache_dev_mode'),
+            'nonce_dev_mode_status' => wp_create_nonce('illios_cache_dev_mode_status'),
             'nonce_apo' => wp_create_nonce('illios_cache_apo')
         ));
     }
@@ -76,6 +77,43 @@ class Illios_Cache_Admin_Settings {
         $this->register_apo_section();
         $this->register_varnish_section();
         $this->register_auto_purge_section();
+    }
+
+    /**
+ * Sync APO settings with Cloudflare when WordPress settings are updated
+ */
+    public function sync_apo_on_settings_update($old_value, $new_value) {
+        // Check if APO settings changed
+        $old_apo_enabled = isset($old_value['cloudflare_apo_enabled']) && $old_value['cloudflare_apo_enabled'];
+        $new_apo_enabled = isset($new_value['cloudflare_apo_enabled']) && $new_value['cloudflare_apo_enabled'];
+        
+        $old_cache_by_device = isset($old_value['cloudflare_apo_cache_by_device_type']) && $old_value['cloudflare_apo_cache_by_device_type'];
+        $new_cache_by_device = isset($new_value['cloudflare_apo_cache_by_device_type']) && $new_value['cloudflare_apo_cache_by_device_type'];
+        
+        // Only sync if APO settings actually changed
+        if ($old_apo_enabled !== $new_apo_enabled || $old_cache_by_device !== $new_cache_by_device) {
+            $cf_handler = new Illios_Cache_Cloudflare_Handler();
+            
+            if ($cf_handler->is_enabled()) {
+                $result = $cf_handler->set_apo_status($new_apo_enabled, $new_cache_by_device);
+                
+                if (is_wp_error($result)) {
+                    add_settings_error(
+                        'illios_cache_settings',
+                        'apo_sync_error',
+                        'APO setting updated in WordPress but failed to sync with Cloudflare: ' . $result->get_error_message(),
+                        'error'
+                    );
+                } else {
+                    add_settings_error(
+                        'illios_cache_settings',
+                        'apo_sync_success',
+                        $new_apo_enabled ? 'APO enabled successfully!' : 'APO disabled successfully!',
+                        'updated'
+                    );
+                }
+            }
+        }
     }
 
     private function register_global_dev_mode_section() {
@@ -396,41 +434,56 @@ class Illios_Cache_Admin_Settings {
     }
 
     public function cloudflare_apo_enabled_callback() {
-        $cf_token_set = isset($this->options['cloudflare_api_token']) && !empty($this->options['cloudflare_api_token']);
-        $cf_enabled = isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'] && $cf_token_set;
-        $disabled = !$cf_enabled;
+        $cf_handler = new Illios_Cache_Cloudflare_Handler();
 
+        $cf_enabled = $cf_handler->is_enabled();
+        
         if (!$cf_enabled) {
             $account_status = 'Not configured';
-        } else {
-            $cf_handler = new Illios_Cache_Cloudflare_Handler();
-            $plan = $cf_handler->get_account_plan();
-            $account_status = $plan ? ucfirst($plan) : 'Unknown';
-            if ($plan === 'free') {
-                $disabled = true;
-            }
-        }
-
-        $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
-
-        if (!$cf_enabled) {
+            $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
             $description .= '<p class="description" style="color: #111;">Enable Cloudflare integration and configure first</p>';
-        } elseif ($account_status === 'Free') {
-            $description .= '<p class="description" style="color: red;">APO cannot be enabled on your current plan (Free plan only allows $5/month).</p>';
+            $checked = false;
+            $disabled = true;
+            $can_enable_apo = false;
         } else {
-            $description .= '<p class="description">Caches your entire WordPress site at Cloudflare\'s edge for maximum performance</p>';
+            $can_enable_apo = $cf_handler->can_enable_apo();
+            $plan = $cf_handler->get_account_plan();
+            $currently_enabled = $cf_handler->is_apo_enabled();
+
+            // Determine account status message
+            if ($can_enable_apo) {
+                $plan_display = $plan ? ucfirst($plan) : 'Unknown';
+                $account_status = "APO available ($plan_display plan)";
+                $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
+                $description .= '<p class="description">Caches your entire WordPress site at Cloudflare\'s edge for maximum performance</p>';
+            } else {
+                $plan_display = $plan ? ucfirst($plan) : 'Unknown';
+                $account_status = "APO not available ($plan_display plan)";
+                $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
+                
+                if ($plan === 'free') {
+                    $description .= '<p class="description" style="color: red;">APO requires a paid plan or $5/month APO subscription on Free plans.</p>';
+                } else {
+                    $description .= '<p class="description" style="color: red;">APO is not available for this zone. Contact Cloudflare support.</p>';
+                }
+            }
+
+            $checked = $currently_enabled;
+            $disabled = !$can_enable_apo;
         }
 
         $this->render_field('checkbox-field.php', array(
             'id' => 'cloudflare_apo_enabled',
             'name' => 'illios_cache_settings[cloudflare_apo_enabled]',
-            'value' => isset($this->options['cloudflare_apo_enabled']) && $this->options['cloudflare_apo_enabled'],
+            'value' => $checked,
             'label' => 'Enable Automatic Platform Optimization',
-            'class' => 'class="apo-field"',
+            'class' => 'class="apo-field apo-enable-field"',
             'disabled' => $disabled,
-            'description' => $description
+            'description' => $description,
+            'data-cf-available' => $can_enable_apo ? '1' : '0'
         ));
     }
+
 
     public function cloudflare_apo_cache_by_device_type_callback() {
         $cf_enabled = isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'];
@@ -442,9 +495,9 @@ class Illios_Cache_Admin_Settings {
             'name' => 'illios_cache_settings[cloudflare_apo_cache_by_device_type]',
             'value' => isset($this->options['cloudflare_apo_cache_by_device_type']) && $this->options['cloudflare_apo_cache_by_device_type'],
             'label' => 'Separate cache for mobile devices',
-            'class' => 'class="apo-field"',
+            'class' => 'class="apo-field apo-cacheby-field"',
             'disabled' => $disabled,
-            'description' => 'Creates separate cache versions for desktop and mobile devices'
+            'description' => '<p class="description">Creates separate cache versions for desktop and mobile devices</p>'
         ));
     }
 
@@ -560,7 +613,7 @@ class Illios_Cache_Admin_Settings {
     }
 
     public function handle_get_dev_mode_status() {
-        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_dev_mode')) {
+        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_dev_mode_status')) {
             wp_send_json_error('Security check failed');
         }
         
@@ -593,54 +646,36 @@ class Illios_Cache_Admin_Settings {
             wp_send_json_error('Cloudflare is not configured.');
         }
 
-        $plan = $cf_handler->get_account_plan();
-        if (!$plan) {
-            wp_send_json_error('Cloudflare API key not configured.');
-        }
-
-        if ($plan === 'free') {
-            wp_send_json_error('APO cannot be enabled on the Free plan. Requires $5/month or Pro+ plan.');
-        }
-
-        $current_status = $cf_handler->get_apo_status();
-
-        if (is_wp_error($current_status)) {
-            wp_send_json_error($current_status->get_error_message());
-        }
-
-        $is_enabled = isset($current_status['result']['value']['enabled']) && $current_status['result']['value']['enabled'];
-        $result = $cf_handler->set_apo_status(!$is_enabled);
+        // Get current WordPress setting
+        $options = get_option('illios_cache_settings', array());
+        $current_wp_setting = isset($options['cloudflare_apo_enabled']) && $options['cloudflare_apo_enabled'];
+        
+        // Toggle it
+        $new_state = !$current_wp_setting;
+        
+        $result = $cf_handler->set_apo_status($new_state);
 
         if (is_wp_error($result)) {
             wp_send_json_error($result->get_error_message());
         }
 
-        wp_send_json_success($result);
+        $message = $new_state ? 'APO enabled successfully' : 'APO disabled successfully';
+        wp_send_json_success($message);
     }
 
-    public function handle_test_varnish_connection() {
-        // Add debug logging here too
-        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
-        file_put_contents($debug_file, "AJAX handler called\n", FILE_APPEND);
-        
+    public function handle_test_varnish_connection() {        
         if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_test')) {
-            file_put_contents($debug_file, "Nonce check failed\n", FILE_APPEND);
             wp_send_json_error('Security check failed');
         }
         
         if (!current_user_can('manage_options')) {
-            file_put_contents($debug_file, "Permission check failed\n", FILE_APPEND);
             wp_send_json_error('Insufficient permissions');
         }
 
-        file_put_contents($debug_file, "Creating Varnish handler\n", FILE_APPEND);
         $varnish_handler = new Illios_Cache_Varnish_Handler();
         $results = $varnish_handler->test_connection();
         
-        file_put_contents($debug_file, "Test results: " . print_r($results, true) . "\n", FILE_APPEND);
-        
         if (is_wp_error($results)) {
-            file_put_contents($debug_file, "WP Error: " . $results->get_error_message() . "\n", FILE_APPEND);
             wp_send_json_error($results->get_error_message());
         }
         
@@ -658,11 +693,9 @@ class Illios_Cache_Admin_Settings {
         
         if (!empty($failed_servers)) {
             $error_message = 'Server test failures: ' . implode('; ', $failed_servers);
-            file_put_contents($debug_file, "Sending error: {$error_message}\n", FILE_APPEND);
             wp_send_json_error($error_message);
         } else {
             $success_message = 'All servers verified: ' . implode('; ', $success_messages);
-            file_put_contents($debug_file, "Sending success: {$success_message}\n", FILE_APPEND);
             wp_send_json_success($success_message);
         }
     }

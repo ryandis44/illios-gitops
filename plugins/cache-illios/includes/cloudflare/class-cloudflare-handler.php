@@ -72,12 +72,13 @@ class Illios_Cache_Cloudflare_Handler {
         $endpoint = "zones/{$this->zone_id}/settings/automatic_platform_optimization";
         $hostname = parse_url(home_url(), PHP_URL_HOST);
 
+
         $body = json_encode(array(
             'value' => array(
                 'enabled' => $enabled,
-                'cf' => false,
-                'wordpress' => $enabled,
-                'wp_plugin' => $enabled,
+                'cf' => true, 
+                'wordpress' => true, 
+                'wp_plugin' => true,  
                 'hostnames' => array($hostname),
                 'cache_by_device_type' => $cache_by_device_type
             )
@@ -90,16 +91,16 @@ class Illios_Cache_Cloudflare_Handler {
             return $response;
         }
 
-        // Check Cloudflare API result
         if (!isset($response['success']) || !$response['success']) {
             $message = 'Failed to update APO.';
             if (!empty($response['errors'][0]['message'])) {
                 $message = $response['errors'][0]['message'];
             }
+            error_log('illios: set_apo_status error: ' . $message);
             return new WP_Error('cloudflare_apo_failed', $message);
         }
 
-        // Update local settings only if API call succeeded
+        // persist settings locally
         $options = get_option('illios_cache_settings', array());
         $options['cloudflare_apo_enabled'] = $enabled;
         $options['cloudflare_apo_cache_by_device_type'] = $cache_by_device_type;
@@ -436,25 +437,57 @@ class Illios_Cache_Cloudflare_Handler {
         return array();
     }
 
-    // public function can_enable_apo() {
-    //     $plan = $this->get_account_plan(); // fetch plan info via API
-    //     // Free plan = 0, Pro+ = 1+
-    //     return $plan !== 'free';
-    // }
-
-    public function get_account_plan() {
-        if (empty($this->api_token)) {
-            return null; // API not configured
+    public function can_enable_apo() {
+        if (!$this->is_enabled()) {
+            return false;
         }
 
-        $endpoint = 'user/tokens/verify'; // Or appropriate endpoint returning plan info
-        $response = $this->make_api_request($endpoint);
+        $endpoint = "zones/{$this->zone_id}/settings/automatic_platform_optimization";
+        $response = $this->make_api_request($endpoint, 'GET');
+
+        if (is_wp_error($response)) {
+            error_log('APO availability check failed: ' . $response->get_error_message());
+            return false;
+        }
+
+        // If the setting exists and is not read-only, APO is available
+        if (isset($response['result'])) {
+            // Check if there's an error indicating APO is not available
+            if (isset($response['errors']) && !empty($response['errors'])) {
+                foreach ($response['errors'] as $error) {
+                    if (strpos($error['message'], 'not available') !== false || 
+                        strpos($error['message'], 'not entitled') !== false) {
+                        return false;
+                    }
+                }
+            }
+            
+            // If we get a result object, APO is available
+            return isset($response['result']['value']) || isset($response['result']['id']);
+        }
+
+        return false;
+    }
+
+    public function get_account_plan() {
+        if (!$this->is_enabled()) {
+            return null;
+        }
+
+        // Get zone details which includes the plan
+        $endpoint = "zones/{$this->zone_id}";
+        $response = $this->make_api_request($endpoint, 'GET');
 
         if (is_wp_error($response)) {
             return null;
         }
 
-        return strtolower($response['result']['plan'] ?? 'free');
+        // Plan is in the zone details
+        if (isset($response['result']['plan']['name'])) {
+            return strtolower($response['result']['plan']['name']);
+        }
+
+        return null;
     }
 
     /**

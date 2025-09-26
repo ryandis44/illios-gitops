@@ -40,18 +40,56 @@ jQuery(document).ready(function ($) {
   }
 
   function toggleAPOFields() {
-    var enabled = $("#cloudflare_apo_enabled").is(":checked");
     var cf_enabled = $("#cloudflare_enabled").is(":checked");
-    var should_enable = enabled && cf_enabled;
-    $(".apo-field")
-      .prop("disabled", !should_enable)
+    var apo_available =
+      $("#cloudflare_apo_enabled").attr("data-cf-available") === "1";
+
+    // enable the APO "enable" checkbox only when Cloudflare integration is enabled AND APO is available
+    var enableApoCheckbox = cf_enabled && apo_available;
+    $(".apo-enable-field")
+      .prop("disabled", !enableApoCheckbox)
       .css({
-        opacity: should_enable ? 1 : 0.5,
-        cursor: should_enable ? "auto" : "not-allowed",
+        opacity: enableApoCheckbox ? 1 : 0.5,
+        cursor: enableApoCheckbox ? "auto" : "not-allowed",
       });
-    $(".apo-field").each(function () {
+
+    // ensure the label for the enable checkbox reflects the enabled state (remove server-side inline disabled style)
+    $(".apo-enable-field").each(function () {
+      var $input = $(this);
+      var $label = $('label[for="' + $input.attr("id") + '"]');
+      if (enableApoCheckbox) {
+        $label.css({ color: "", cursor: "" }).removeAttr("style");
+      } else {
+        $label.css({ color: "#999", cursor: "not-allowed" });
+      }
+    });
+
+    // cache-by-device should be enabled only when APO checkbox is enabled and checked
+    var apo_checked = $("#cloudflare_apo_enabled").is(":checked");
+    var enableCacheBy = cf_enabled && apo_available && apo_checked;
+    $(".apo-cacheby-field")
+      .prop("disabled", !enableCacheBy)
+      .css({
+        opacity: enableCacheBy ? 1 : 0.5,
+        cursor: enableCacheBy ? "auto" : "not-allowed",
+      });
+
+    // ensure the label for cache-by reflects the enabled state
+    $(".apo-cacheby-field").each(function () {
+      var $input = $(this);
+      var $label = $('label[for="' + $input.attr("id") + '"]');
+      if (enableCacheBy) {
+        $label.css({ color: "", cursor: "" }).removeAttr("style");
+      } else {
+        $label.css({ color: "#999", cursor: "not-allowed" });
+      }
+    });
+
+    // adjust th label color for both field types
+    $(".apo-enable-field, .apo-cacheby-field").each(function () {
       var $th = $(this).closest("tr").find("th");
-      $th.css("color", should_enable ? "" : "#999");
+      var fieldDisabled = $(this).prop("disabled");
+      $th.css("color", fieldDisabled ? "#999" : "");
     });
   }
 
@@ -66,7 +104,10 @@ jQuery(document).ready(function ($) {
     toggleAPOFields();
   });
   $("#varnish_enabled").change(toggleVarnishFields);
-  $("#cloudflare_apo_enabled").change(toggleAPOFields);
+
+  $("#cloudflare_apo_enabled").change(function () {
+    toggleAPOFields();
+  });
 
   // Cache purge functionality
   $("#purge-cloudflare").click(function () {
@@ -95,11 +136,6 @@ jQuery(document).ready(function ($) {
   // Dev mode functionality
   $("#global-dev-mode-toggle").click(function () {
     globalToggleDevMode();
-  });
-
-  // APO toggle functionality
-  $("#toggle-apo").click(function () {
-    toggleAPO();
   });
 
   // Core AJAX Functions
@@ -266,6 +302,7 @@ jQuery(document).ready(function ($) {
   }
 
   function toggleAPO() {
+    console.log("toggleAPO function called");
     $.post(
       illios_cache_ajax.ajax_url,
       {

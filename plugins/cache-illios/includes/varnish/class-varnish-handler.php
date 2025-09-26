@@ -75,17 +75,12 @@ class Illios_Cache_Varnish_Handler {
      */
     public function purge_all() {
         if (!$this->is_enabled()) {
-            error_log("ILLIOS DEBUG: Varnish purge_all() called but Varnish is not enabled or configured");
             return new WP_Error('varnish_disabled', 'Varnish purging is not enabled or configured');
         }
-
-        error_log("ILLIOS DEBUG: Varnish purge_all() called - using regex purge");
         
         // Use regex purge for full cache clear
         $home_url = home_url('/');
         $regex_url = $home_url . '?vhp-regex';
-        
-        error_log("ILLIOS DEBUG: Regex URL for purge_all: " . $regex_url);
         
         return $this->purge_url($regex_url);
     }
@@ -96,16 +91,11 @@ class Illios_Cache_Varnish_Handler {
      */
     public function purge_url($url) {
         if (!$this->is_enabled()) {
-            error_log("ILLIOS DEBUG: Varnish purge_url() called but Varnish is not enabled or configured");
             return new WP_Error('varnish_disabled', 'Varnish purging is not enabled or configured');
         }
 
-        error_log("ILLIOS DEBUG: Starting purge_url for: " . $url);
-        error_log("ILLIOS DEBUG: Configured servers: " . print_r($this->servers, true));
-
         // Bail early if someone sent a non-URL
         if (false === filter_var($url, FILTER_VALIDATE_URL)) {
-            error_log("ILLIOS DEBUG: Invalid URL provided: " . $url);
             return new WP_Error('invalid_url', 'Invalid URL provided for purging');
         }
 
@@ -113,7 +103,6 @@ class Illios_Cache_Varnish_Handler {
 
         // Bail early if there's no host
         if (!isset($p['host'])) {
-            error_log("ILLIOS DEBUG: URL missing host: " . $url);
             return new WP_Error('invalid_url', 'URL must include a valid host');
         }
 
@@ -124,7 +113,6 @@ class Illios_Cache_Varnish_Handler {
         if (isset($p['query']) && ('vhp-regex' === $p['query'])) {
             $pregex = '.*';
             $x_purge_method = 'regex';
-            error_log("ILLIOS DEBUG: Using regex purge method");
         }
 
         // Determine the path
@@ -136,9 +124,7 @@ class Illios_Cache_Varnish_Handler {
         $results = array();
 
         // Loop through all Varnish servers
-        foreach ($this->servers as $server) {
-            error_log("ILLIOS DEBUG: Processing server: " . $server);
-            
+        foreach ($this->servers as $server) {            
             // Allow setting of ports in server name
             $host_headers = $p['host'];
             if (isset($p['port'])) {
@@ -160,10 +146,6 @@ class Illios_Cache_Varnish_Handler {
                 'User-Agent' => 'Illios-Cache-Plugin/' . ILLIOS_CACHE_VERSION,
             );
 
-            error_log("ILLIOS DEBUG: Attempting PURGE to: " . $purgeme);
-            error_log("ILLIOS DEBUG: Headers: " . print_r($headers, true));
-            error_log("ILLIOS DEBUG: Server being used: " . $server);
-
             // Send PURGE request
             $response = wp_remote_request($purgeme, array(
                 'method' => 'PURGE',
@@ -174,16 +156,11 @@ class Illios_Cache_Varnish_Handler {
             ));
 
             if (is_wp_error($response)) {
-                error_log("ILLIOS DEBUG: PURGE failed with error: " . $response->get_error_message());
-                error_log("Varnish purge failed for server {$server}: " . $response->get_error_message());
                 $results[$server] = $response;
                 continue;
             }
 
             $response_code = wp_remote_retrieve_response_code($response);
-            $response_body = wp_remote_retrieve_body($response);
-            error_log("ILLIOS DEBUG: PURGE response code: " . $response_code);
-            error_log("ILLIOS DEBUG: PURGE response body: " . $response_body);
             
             // Varnish typically returns 200 for successful purges
             if (!in_array($response_code, array(200, 404))) {
@@ -194,7 +171,6 @@ class Illios_Cache_Varnish_Handler {
                     $response_code
                 );
             } else {
-                error_log("ILLIOS DEBUG: PURGE successful for server: " . $server);
                 $results[$server] = array(
                     'success' => true,
                     'response_code' => $response_code,
@@ -205,7 +181,6 @@ class Illios_Cache_Varnish_Handler {
             }
         }
 
-        error_log("ILLIOS DEBUG: Final purge results: " . print_r($results, true));
         return $results;
     }
 
@@ -214,17 +189,12 @@ class Illios_Cache_Varnish_Handler {
      */
     public function purge_urls($urls) {
         if (!$this->is_enabled()) {
-            error_log("ILLIOS DEBUG: Varnish purge_urls() called but Varnish is not enabled or configured");
             return new WP_Error('varnish_disabled', 'Varnish purging is not enabled or configured');
         }
 
         if (empty($urls) || !is_array($urls)) {
-            error_log("ILLIOS DEBUG: Invalid URLs provided to purge_urls");
             return new WP_Error('invalid_urls', 'URLs must be provided as an array');
         }
-
-        error_log("ILLIOS DEBUG: Starting purge_urls for " . count($urls) . " URLs");
-        error_log("ILLIOS DEBUG: URLs to purge: " . print_r($urls, true));
 
         $results = array();
 
@@ -383,9 +353,6 @@ class Illios_Cache_Varnish_Handler {
      * Test connection to Varnish servers
      */
     public function test_connection() {
-        error_log("Varnish test_connection() called");
-        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
-        file_put_contents($debug_file, "Servers from config: " . print_r($this->servers, true) . "\n", FILE_APPEND);
         
         if (!$this->is_enabled()) {
             return new WP_Error('varnish_disabled', 'Varnish is not enabled or configured');
@@ -406,9 +373,6 @@ class Illios_Cache_Varnish_Handler {
     }
 
     private function test_varnish_purge($host, $port) {
-        $debug_file = WP_CONTENT_DIR . '/varnish_debug.log';
-        file_put_contents($debug_file, "Testing PURGE method on {$host}:{$port}\n", FILE_APPEND);
-        
         $url = "http://{$host}:{$port}/";
         
         // Test PURGE method - most reliable way to detect Varnish
@@ -421,7 +385,6 @@ class Illios_Cache_Varnish_Handler {
         ));
         
         if (is_wp_error($response)) {
-            file_put_contents($debug_file, "PURGE test error: " . $response->get_error_message() . "\n", FILE_APPEND);
             return array(
                 'success' => false,
                 'message' => 'PURGE test failed: ' . $response->get_error_message()
@@ -431,14 +394,11 @@ class Illios_Cache_Varnish_Handler {
         $status = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         
-        file_put_contents($debug_file, "PURGE response status: {$status}\n", FILE_APPEND);
-        file_put_contents($debug_file, "PURGE response body: {$body}\n", FILE_APPEND);
         
         // Varnish typically returns 200 (success) or 405 (not allowed in ACL) for PURGE
         if (in_array($status, array(200, 405))) {
             // Look for Varnish-specific PURGE responses
             if (stripos($body, 'PURGE') !== false || stripos($body, 'varnish') !== false) {
-                file_put_contents($debug_file, "Varnish detected via PURGE response content\n", FILE_APPEND);
                 return array(
                     'success' => true,
                     'message' => 'Varnish detected via PURGE method response'
@@ -447,7 +407,6 @@ class Illios_Cache_Varnish_Handler {
             
             // Even without specific text, proper PURGE handling suggests Varnish
             if ($status === 200 || ($status === 405 && stripos($body, 'not allowed') !== false)) {
-                file_put_contents($debug_file, "Varnish likely detected via PURGE method support\n", FILE_APPEND);
                 return array(
                     'success' => true,
                     'message' => "PURGE method supported (status: {$status}) - likely Varnish"
@@ -455,7 +414,6 @@ class Illios_Cache_Varnish_Handler {
             }
         }
         
-        file_put_contents($debug_file, "PURGE test failed - status: {$status}, no Varnish indicators\n", FILE_APPEND);
         return array(
             'success' => false,
             'message' => "PURGE not supported (status: {$status}) - no Varnish detected"
