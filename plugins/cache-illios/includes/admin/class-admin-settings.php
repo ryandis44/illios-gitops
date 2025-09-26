@@ -406,8 +406,9 @@ class Illios_Cache_Admin_Settings {
             'value' => isset($this->options['cloudflare_zone_id']) ? $this->options['cloudflare_zone_id'] : '',
             'class' => 'class="regular-text cloudflare-field"',
             'disabled' => $disabled,
-            'description' => 'Your Cloudflare Zone ID (found in the right sidebar of your domain overview)'
-        ));
+            'description' => 'Your Cloudflare Zone ID (found in the right sidebar of your domain overview). 
+            <a href="https://dash.cloudflare.com/" target="_blank">Cloudflare Dashboard</a>'
+    ));
     }
 
     public function cloudflare_advanced_controls_callback() {

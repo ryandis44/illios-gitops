@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
         <div class="illios-section illios-cloudflare-section">
             <h2><span class="section-title">Cloudflare Settings</span></h2>
             <div class="section-description">
-                <p>Configure your Cloudflare API settings below. You can create an API token at: <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">Cloudflare Dashboard</a></p>
+                <p>Configure your Cloudflare API settings below.</p>
             </div>
             <table class="form-table">
                 <?php do_settings_fields('illios-cache-admin', 'cloudflare_section'); ?>
