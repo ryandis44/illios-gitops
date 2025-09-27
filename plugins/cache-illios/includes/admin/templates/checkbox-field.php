@@ -17,7 +17,7 @@ $label_style = $disabled ? 'style="color: #999; cursor: not-allowed;"' : '';
        value="1" 
        <?php echo $value; ?> 
        <?php echo $disabled; ?> 
-       <?php echo $class; ?> 
+       class="<?php echo esc_attr($class); ?>" 
        <?php echo $data_cf_available; ?>
 />
 <label for="<?php echo esc_attr($id); ?>" <?php echo $label_style; ?>><?php echo esc_html($label); ?></label>

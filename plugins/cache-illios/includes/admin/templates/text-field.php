@@ -7,7 +7,7 @@ $value = $args['value'] ?? '';
 $type = $args['type'] ?? 'text';
 $description = $args['description'] ?? '';
 $disabled = isset($args['disabled']) && $args['disabled'] ? 'disabled' : '';
-$class = $args['class'] ?? 'class="regular-text"';
+$class = $args['class'] ?? 'regular-text';
 $min = isset($args['min']) ? 'min="' . esc_attr($args['min']) . '"' : '';
 $max = isset($args['max']) ? 'max="' . esc_attr($args['max']) . '"' : '';
 ?>
@@ -16,7 +16,7 @@ $max = isset($args['max']) ? 'max="' . esc_attr($args['max']) . '"' : '';
        id="<?php echo esc_attr($id); ?>" 
        name="<?php echo esc_attr($name); ?>" 
        value="<?php echo esc_attr($value); ?>" 
-       <?php echo $class; ?>
+       class="<?php echo esc_attr($class); ?>"
        <?php echo $disabled; ?>
        <?php echo $min; ?>
        <?php echo $max; ?>

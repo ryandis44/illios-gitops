@@ -37,6 +37,12 @@ jQuery(document).ready(function ($) {
       var $th = $(this).closest("tr").find("th");
       $th.css("color", enabled ? "" : "#999");
     });
+    $(".varnish-advanced-btn")
+      .prop("disabled", !enabled)
+      .css({
+        opacity: enabled ? 1 : 0.5,
+        cursor: enabled ? "auto" : "not-allowed",
+      });
   }
 
   function toggleAPOFields() {
@@ -93,48 +99,63 @@ jQuery(document).ready(function ($) {
     });
   }
 
-  // Initialize field states
-  toggleCloudflareFields();
-  toggleVarnishFields();
-  toggleAPOFields();
+  function initializeToggles() {
+    toggleCloudflareFields();
+    toggleVarnishFields();
+    toggleAPOFields();
+    $(".varnish-advanced-btn").prop(
+      "disabled",
+      !$("#varnish_enabled").is(":checked")
+    );
+  }
+
+  var settingsTableCheck = setInterval(function () {
+    if ($("#cloudflare_enabled").length && $("#varnish_enabled").length) {
+      clearInterval(settingsTableCheck);
+      initializeToggles();
+    }
+  }, 50);
 
   // Bind change events
-  $("#cloudflare_enabled").change(function () {
+  jQuery(document).on("change", "#cloudflare_enabled", function () {
     toggleCloudflareFields();
     toggleAPOFields();
+    console.log("CLOUDFLARE TOGGLED");
   });
-  $("#varnish_enabled").change(toggleVarnishFields);
 
-  $("#cloudflare_apo_enabled").change(function () {
+  jQuery(document).on("change", "#varnish_enabled", function () {
+    toggleVarnishFields();
+    console.log("VARNISH TOGGLED");
+  });
+
+  jQuery(document).on("change", "#cloudflare_apo_enabled", function () {
     toggleAPOFields();
   });
 
+
   // Cache purge functionality
-  $("#purge-cloudflare").click(function () {
+  jQuery(document).on("click", "#purge-cloudflare", function () {
     purgeCache("cloudflare");
   });
-  $("#purge-varnish").click(function () {
+  jQuery(document).on("click", "#purge-varnish", function () {
     purgeCache("varnish");
   });
-  $("#purge-all").click(function () {
+  jQuery(document).on("click", "#purge-all", function () {
     purgeCache("all");
   });
 
-  // Advanced Cloudflare management
-  $("#test-cloudflare").click(function () {
+  jQuery(document).on("click", "#test-cloudflare", function () {
     testCloudflareConnection();
   });
-  $("#apply-wp-settings").click(function () {
+  jQuery(document).on("click", "#apply-wp-settings", function () {
     applyWordPressSettings();
   });
 
-  // Advanced Varnish management
-  $("#test-varnish").click(function () {
+  jQuery(document).on("click", "#test-varnish", function () {
     testVarnishConnection();
   });
 
-  // Dev mode functionality
-  $("#global-dev-mode-toggle").click(function () {
+  jQuery(document).on("click", "#global-dev-mode-toggle", function () {
     globalToggleDevMode();
   });
 

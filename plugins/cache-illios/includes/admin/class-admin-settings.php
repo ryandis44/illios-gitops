@@ -372,6 +372,7 @@ class Illios_Cache_Admin_Settings {
             'name' => 'illios_cache_settings[global_dev_mode_enabled]',
             'value' => isset($this->options['global_dev_mode_enabled']) && $this->options['global_dev_mode_enabled'],
             'label' => 'Enable global development mode (automatically purge all cache on content changes)',
+            'class' => 'global-dev-mode-field',
             'description' => 'When enabled, cache is purged immediately on every post save, comment, or other content change for both Cloudflare and Varnish.'
         ));
     }
@@ -381,8 +382,10 @@ class Illios_Cache_Admin_Settings {
             'id' => 'cloudflare_enabled',
             'name' => 'illios_cache_settings[cloudflare_enabled]',
             'value' => isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'],
-            'label' => 'Enable Cloudflare integration and cache purging'
+            'label' => 'Enable Cloudflare integration and cache purging',
         ));
+        error_log("cloudflare");
+        error_log(isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled']);
     }
 
     public function cloudflare_api_token_callback() {
@@ -390,9 +393,9 @@ class Illios_Cache_Admin_Settings {
         $this->render_field('text-field.php', array(
             'id' => 'cloudflare_api_token',
             'name' => 'illios_cache_settings[cloudflare_api_token]',
-            'value' => isset($this->options['cloudflare_api_token']) ? $this->options['cloudflare_api_token'] : '',
+            'value' => $this->options['cloudflare_api_token'] ?? '',
             'type' => 'password',
-            'class' => 'class="regular-text cloudflare-field"',
+            'class' => 'regular-text cloudflare-field',
             'disabled' => $disabled,
             'description' => 'Your Cloudflare API token with Zone:Cache Purge and Zone:Zone Settings permissions. <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">Create Token</a>'
         ));
@@ -403,12 +406,11 @@ class Illios_Cache_Admin_Settings {
         $this->render_field('text-field.php', array(
             'id' => 'cloudflare_zone_id',
             'name' => 'illios_cache_settings[cloudflare_zone_id]',
-            'value' => isset($this->options['cloudflare_zone_id']) ? $this->options['cloudflare_zone_id'] : '',
-            'class' => 'class="regular-text cloudflare-field"',
+            'value' => $this->options['cloudflare_zone_id'] ?? '',
+            'class' => 'regular-text cloudflare-field',
             'disabled' => $disabled,
-            'description' => 'Your Cloudflare Zone ID (found in the right sidebar of your domain overview). 
-            <a href="https://dash.cloudflare.com/" target="_blank">Cloudflare Dashboard</a>'
-    ));
+            'description' => 'Your Cloudflare Zone ID (found in the right sidebar of your domain overview). <a href="https://dash.cloudflare.com/" target="_blank">Cloudflare Dashboard</a>'
+        ));
     }
 
     public function cloudflare_advanced_controls_callback() {
@@ -422,7 +424,7 @@ class Illios_Cache_Admin_Settings {
                 'class' => 'button button-secondary cloudflare-advanced-btn',
                 'disabled' => $disabled
             ));
-            
+
             $this->render_field('button-field.php', array(
                 'id' => 'apply-wp-settings',
                 'label' => 'Apply WordPress Settings',
@@ -434,127 +436,128 @@ class Illios_Cache_Admin_Settings {
         <?php
     }
 
-    public function cloudflare_apo_enabled_callback() {
-        $cf_handler = new Illios_Cache_Cloudflare_Handler();
+public function cloudflare_apo_enabled_callback() {
+    $cf_handler = new Illios_Cache_Cloudflare_Handler();
+    $cf_enabled = $cf_handler->is_enabled();
 
-        $cf_enabled = $cf_handler->is_enabled();
-        
-        if (!$cf_enabled) {
-            $account_status = 'Not configured';
+    if (!$cf_enabled) {
+        $account_status = 'Not configured';
+        $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
+        $description .= '<p class="description" style="color: #111;">Enable Cloudflare integration and configure first</p>';
+        $checked = false;
+        $disabled = true;
+        $can_enable_apo = false;
+    } else {
+        $can_enable_apo = $cf_handler->can_enable_apo();
+        $plan = $cf_handler->get_account_plan();
+        $currently_enabled = $cf_handler->is_apo_enabled();
+
+        if ($can_enable_apo) {
+            $plan_display = $plan ? ucfirst($plan) : 'Unknown';
+            $account_status = "APO available ($plan_display plan)";
             $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
-            $description .= '<p class="description" style="color: #111;">Enable Cloudflare integration and configure first</p>';
-            $checked = false;
-            $disabled = true;
-            $can_enable_apo = false;
+            $description .= '<p class="description">Caches your entire WordPress site at Cloudflare\'s edge for maximum performance</p>';
         } else {
-            $can_enable_apo = $cf_handler->can_enable_apo();
-            $plan = $cf_handler->get_account_plan();
-            $currently_enabled = $cf_handler->is_apo_enabled();
+            $plan_display = $plan ? ucfirst($plan) : 'Unknown';
+            $account_status = "APO not available ($plan_display plan)";
+            $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
 
-            // Determine account status message
-            if ($can_enable_apo) {
-                $plan_display = $plan ? ucfirst($plan) : 'Unknown';
-                $account_status = "APO available ($plan_display plan)";
-                $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
-                $description .= '<p class="description">Caches your entire WordPress site at Cloudflare\'s edge for maximum performance</p>';
+            if ($plan === 'free') {
+                $description .= '<p class="description" style="color: red;">APO requires a paid plan or $5/month APO subscription on Free plans.</p>';
             } else {
-                $plan_display = $plan ? ucfirst($plan) : 'Unknown';
-                $account_status = "APO not available ($plan_display plan)";
-                $description = '<p class="description" style="margin-top:4px;">Account status: <strong>' . esc_html($account_status) . '</strong></p>';
-                
-                if ($plan === 'free') {
-                    $description .= '<p class="description" style="color: red;">APO requires a paid plan or $5/month APO subscription on Free plans.</p>';
-                } else {
-                    $description .= '<p class="description" style="color: red;">APO is not available for this zone. Contact Cloudflare support.</p>';
-                }
+                $description .= '<p class="description" style="color: red;">APO is not available for this zone. Contact Cloudflare support.</p>';
             }
-
-            $checked = $currently_enabled;
-            $disabled = !$can_enable_apo;
         }
 
-        $this->render_field('checkbox-field.php', array(
-            'id' => 'cloudflare_apo_enabled',
-            'name' => 'illios_cache_settings[cloudflare_apo_enabled]',
-            'value' => $checked,
-            'label' => 'Enable Automatic Platform Optimization',
-            'class' => 'class="apo-field apo-enable-field"',
-            'disabled' => $disabled,
-            'description' => $description,
-            'data-cf-available' => $can_enable_apo ? '1' : '0'
-        ));
+        $checked = $currently_enabled;
+        $disabled = !$can_enable_apo;
     }
 
+    $this->render_field('checkbox-field.php', array(
+        'id' => 'cloudflare_apo_enabled',
+        'name' => 'illios_cache_settings[cloudflare_apo_enabled]',
+        'value' => $checked,
+        'label' => 'Enable Automatic Platform Optimization',
+        'class' => 'apo-field apo-enable-field',
+        'disabled' => $disabled,
+        'description' => $description,
+        'data-cf-available' => $can_enable_apo ? '1' : '0'
+    ));
+}
 
-    public function cloudflare_apo_cache_by_device_type_callback() {
-        $cf_enabled = isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'];
-        $apo_enabled = isset($this->options['cloudflare_apo_enabled']) && $this->options['cloudflare_apo_enabled'];
-        $disabled = (!$cf_enabled || !$apo_enabled);
+public function cloudflare_apo_cache_by_device_type_callback() {
+    $cf_enabled = isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'];
+    $apo_enabled = isset($this->options['cloudflare_apo_enabled']) && $this->options['cloudflare_apo_enabled'];
+    $disabled = (!$cf_enabled || !$apo_enabled);
 
-        $this->render_field('checkbox-field.php', array(
-            'id' => 'cloudflare_apo_cache_by_device_type',
-            'name' => 'illios_cache_settings[cloudflare_apo_cache_by_device_type]',
-            'value' => isset($this->options['cloudflare_apo_cache_by_device_type']) && $this->options['cloudflare_apo_cache_by_device_type'],
-            'label' => 'Separate cache for mobile devices',
-            'class' => 'class="apo-field apo-cacheby-field"',
-            'disabled' => $disabled,
-            'description' => '<p class="description">Creates separate cache versions for desktop and mobile devices</p>'
-        ));
-    }
+    $this->render_field('checkbox-field.php', array(
+        'id' => 'cloudflare_apo_cache_by_device_type',
+        'name' => 'illios_cache_settings[cloudflare_apo_cache_by_device_type]',
+        'value' => isset($this->options['cloudflare_apo_cache_by_device_type']) && $this->options['cloudflare_apo_cache_by_device_type'],
+        'label' => 'Separate cache for mobile devices',
+        'class' => 'apo-field apo-cacheby-field',
+        'disabled' => $disabled,
+        'description' => '<p class="description">Creates separate cache versions for desktop and mobile devices</p>'
+    ));
+}
 
-    public function varnish_enabled_callback() {
-        $this->render_field('checkbox-field.php', array(
-            'id' => 'varnish_enabled',
-            'name' => 'illios_cache_settings[varnish_enabled]',
-            'value' => isset($this->options['varnish_enabled']) && $this->options['varnish_enabled'],
-            'label' => 'Enable automatic Varnish cache purging'
-        ));
-    }
+public function varnish_enabled_callback() {
+    $this->render_field('checkbox-field.php', array(
+        'id' => 'varnish_enabled',
+        'name' => 'illios_cache_settings[varnish_enabled]',
+        'value' => isset($this->options['varnish_enabled']) && $this->options['varnish_enabled'],
+        'label' => 'Enable automatic Varnish cache purging',
+    ));
+    error_log("varnish");
+    error_log(isset($this->options['varnish_enabled']) && $this->options['varnish_enabled']);
+}
 
-    public function varnish_servers_callback() {
-        $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
-        $this->render_field('textarea-field.php', array(
-            'id' => 'varnish_servers',
-            'name' => 'illios_cache_settings[varnish_servers]',
-            'value' => isset($this->options['varnish_servers']) ? $this->options['varnish_servers'] : '',
-            'rows' => 5,
-            'class' => 'class="large-text varnish-field" style="max-width: 350px;"',
-            'disabled' => $disabled,
-            'description' => 'List of Varnish server IPs, one per line (e.g., 127.0.0.1:6081)'
-        ));
-    }
+public function varnish_servers_callback() {
+    $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
+    $this->render_field('textarea-field.php', array(
+        'id' => 'varnish_servers',
+        'name' => 'illios_cache_settings[varnish_servers]',
+        'value' => $this->options['varnish_servers'] ?? '',
+        'rows' => 5,
+        'class' => 'large-text varnish-field',
+        'disabled' => $disabled,
+        'description' => 'List of Varnish server IPs, one per line (e.g., 127.0.0.1:6081)'
+    ));
+}
 
-    public function varnish_timeout_callback() {
-        $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
-        $timeout = isset($this->options['varnish_timeout']) ? $this->options['varnish_timeout'] : 30;
-        $this->render_field('text-field.php', array(
-            'id' => 'varnish_timeout',
-            'name' => 'illios_cache_settings[varnish_timeout]',
-            'value' => $timeout,
-            'type' => 'number',
-            'min' => 5,
-            'max' => 60,
-            'class' => 'class="small-text varnish-field"',
-            'disabled' => $disabled,
-            'description' => 'Timeout for Varnish purge requests (5-60 seconds, default: 30)'
-        ));
-    }
+public function varnish_timeout_callback() {
+    $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
+    $timeout = $this->options['varnish_timeout'] ?? 30;
+    $this->render_field('text-field.php', array(
+        'id' => 'varnish_timeout',
+        'name' => 'illios_cache_settings[varnish_timeout]',
+        'value' => $timeout,
+        'type' => 'number',
+        'min' => 5,
+        'max' => 60,
+        'class' => 'small-text varnish-field',
+        'disabled' => $disabled,
+        'description' => 'Timeout for Varnish purge requests (5-60 seconds, default: 30)'
+    ));
+}
 
-    public function varnish_advanced_controls_callback() {
-        $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
-        ?>
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <?php
-            $this->render_field('button-field.php', array(
-                'id' => 'test-varnish',
-                'label' => 'Test Connection',
-                'class' => 'button button-secondary varnish-advanced-btn',
-                'disabled' => $disabled
-            ));
-            ?>
-        </div>
+public function varnish_advanced_controls_callback() {
+    $disabled = (!isset($this->options['varnish_enabled']) || !$this->options['varnish_enabled']);
+    error_log(message: "VARNISH DISABLED");
+    error_log($disabled);
+    ?>
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
         <?php
-    }
+        $this->render_field('button-field.php', array(
+            'id' => 'test-varnish',
+            'label' => 'Test Connection',
+            'class' => 'button button-secondary varnish-advanced-btn',
+            'disabled' => $disabled
+        ));
+        ?>
+    </div>
+    <?php
+}
 
     public function purge_on_post_save_callback() {
         $this->render_field('checkbox-field.php', array(

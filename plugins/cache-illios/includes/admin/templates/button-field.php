@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 $id = $args['id'] ?? '';
 $label = $args['label'] ?? '';
 $description = $args['description'] ?? '';
-$disabled = isset($args['disabled']) && $args['disabled'] ? 'disabled' : '';
+$disabled =  !empty($args['disabled']) ? 'disabled="disabled"' : '';
 $class = $args['class'] ?? 'button button-secondary';
 ?>
 
