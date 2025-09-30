@@ -36,7 +36,7 @@ class Illios_Cache_Varnish_Handler {
         
         if (empty($server_string)) {
             // Default to localhost if no servers specified
-            return array('127.0.0.1');
+            return array('wordpress:80');
         }
 
         $lines = explode("\n", $server_string);

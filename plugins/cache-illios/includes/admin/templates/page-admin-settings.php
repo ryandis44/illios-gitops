@@ -30,18 +30,15 @@ if (!defined('ABSPATH')) {
                 <?php do_settings_fields('illios-cache-admin', 'cloudflare_section'); ?>
             </table>
 
-            <br/>
-            <br/>
-            <br/>
         <!-- APO Section (part of Cloudflare) -->
 
-            <h2>Cloudflare Automatic Platform Optimization (APO)</h2>
+            <!-- <h2>Cloudflare Automatic Platform Optimization (APO)</h2>
             <div class="section-description">
                 <p>Automatic Platform Optimization caches your entire WordPress site on Cloudflare's edge network for maximum performance. <strong>Note:</strong> APO costs $5/month on Free plans or is included with Pro+ plans.</p>
             </div>
             <table class="form-table">
                 <?php do_settings_fields('illios-cache-admin', 'apo_section'); ?>
-            </table>
+            </table> -->
         </div>
 
         <!-- Varnish Section with branded styling -->

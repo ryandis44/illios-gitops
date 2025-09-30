@@ -120,12 +120,10 @@ jQuery(document).ready(function ($) {
   jQuery(document).on("change", "#cloudflare_enabled", function () {
     toggleCloudflareFields();
     toggleAPOFields();
-    console.log("CLOUDFLARE TOGGLED");
   });
 
   jQuery(document).on("change", "#varnish_enabled", function () {
     toggleVarnishFields();
-    console.log("VARNISH TOGGLED");
   });
 
   jQuery(document).on("change", "#cloudflare_apo_enabled", function () {

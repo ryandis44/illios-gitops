@@ -143,35 +143,35 @@ class Illios_Cache_Admin_Settings {
 
         add_settings_field(
             'cloudflare_enabled',
-            'Enable Cloudflare Integration',
+            'Enable Cloudflare Purging',
             array($this, 'cloudflare_enabled_callback'),
             'illios-cache-admin',
             'cloudflare_section'
         );
 
-        add_settings_field(
-            'cloudflare_api_token',
-            'API Token',
-            array($this, 'cloudflare_api_token_callback'),
-            'illios-cache-admin',
-            'cloudflare_section'
-        );
+        // add_settings_field(
+        //     'cloudflare_api_token',
+        //     'API Token',
+        //     array($this, 'cloudflare_api_token_callback'),
+        //     'illios-cache-admin',
+        //     'cloudflare_section'
+        // );
 
-        add_settings_field(
-            'cloudflare_zone_id',
-            'Zone ID',
-            array($this, 'cloudflare_zone_id_callback'),
-            'illios-cache-admin',
-            'cloudflare_section'
-        );
+        // add_settings_field(
+        //     'cloudflare_zone_id',
+        //     'Zone ID',
+        //     array($this, 'cloudflare_zone_id_callback'),
+        //     'illios-cache-admin',
+        //     'cloudflare_section'
+        // );
 
-        add_settings_field(
-            'cloudflare_advanced_controls',
-            '',
-            array($this, 'cloudflare_advanced_controls_callback'),
-            'illios-cache-admin',
-            'cloudflare_section'
-        );
+        // add_settings_field(
+        //     'cloudflare_advanced_controls',
+        //     '',
+        //     array($this, 'cloudflare_advanced_controls_callback'),
+        //     'illios-cache-admin',
+        //     'cloudflare_section'
+        // );
     }
 
     private function register_apo_section() {
@@ -215,29 +215,29 @@ class Illios_Cache_Admin_Settings {
             'varnish_section'
         );
 
-        add_settings_field(
-            'varnish_servers',
-            'Varnish Servers',
-            array($this, 'varnish_servers_callback'),
-            'illios-cache-admin',
-            'varnish_section'
-        );
+        // add_settings_field(
+        //     'varnish_servers',
+        //     'Varnish Servers',
+        //     array($this, 'varnish_servers_callback'),
+        //     'illios-cache-admin',
+        //     'varnish_section'
+        // );
 
-        add_settings_field(
-            'varnish_timeout',
-            'Request Timeout (seconds)',
-            array($this, 'varnish_timeout_callback'),
-            'illios-cache-admin',
-            'varnish_section'
-        );
+        // add_settings_field(
+        //     'varnish_timeout',
+        //     'Request Timeout (seconds)',
+        //     array($this, 'varnish_timeout_callback'),
+        //     'illios-cache-admin',
+        //     'varnish_section'
+        // );
 
-        add_settings_field(
-            'varnish_advanced_controls',
-            '',
-            array($this, 'varnish_advanced_controls_callback'),
-            'illios-cache-admin',
-            'varnish_section'
-        );
+        // add_settings_field(
+        //     'varnish_advanced_controls',
+        //     '',
+        //     array($this, 'varnish_advanced_controls_callback'),
+        //     'illios-cache-admin',
+        //     'varnish_section'
+        // );
     }
 
     private function register_auto_purge_section() {
@@ -382,7 +382,7 @@ class Illios_Cache_Admin_Settings {
             'id' => 'cloudflare_enabled',
             'name' => 'illios_cache_settings[cloudflare_enabled]',
             'value' => isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled'],
-            'label' => 'Enable Cloudflare integration and cache purging',
+            'label' => 'Enable automatic Cloudflare cache purging',
         ));
         error_log("cloudflare");
         error_log(isset($this->options['cloudflare_enabled']) && $this->options['cloudflare_enabled']);
