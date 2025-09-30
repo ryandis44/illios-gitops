@@ -30,9 +30,20 @@ class Illios_Cache_Admin_Settings {
         add_action('wp_ajax_illios_cache_toggle_dev_mode', array($this, 'handle_toggle_dev_mode'));
         add_action('wp_ajax_illios_cache_get_dev_mode_status', array($this, 'handle_get_dev_mode_status'));
         
-        $this->options = get_option('illios_cache_settings', array());
+        $this->options = $this->get_options_with_defaults();
         $this->template_path = plugin_dir_path(__FILE__) . 'templates/';
     }
+
+    private function get_options_with_defaults() {
+        $defaults = array(
+            'cloudflare_enabled' => true,
+            'varnish_enabled' => true,
+        );
+        
+        $options = get_option('illios_cache_settings', array());
+        
+    return wp_parse_args($options, $defaults);
+}
 
     public function enqueue_admin_assets($hook) {
         if ('settings_page_illios-cache-admin' !== $hook) {
@@ -272,6 +283,9 @@ class Illios_Cache_Admin_Settings {
             $new_input['global_dev_mode_enabled'] = (bool) $input['global_dev_mode_enabled'];
         }
 
+        $new_input['cloudflare_enabled'] = isset($input['cloudflare_enabled']) ? (bool) $input['cloudflare_enabled'] : false;
+        $new_input['varnish_enabled'] = isset($input['varnish_enabled']) ? (bool) $input['varnish_enabled'] : false;
+
         if (isset($input['cloudflare_api_token'])) {
             $new_input['cloudflare_api_token'] = sanitize_text_field($input['cloudflare_api_token']);
         }
@@ -280,9 +294,9 @@ class Illios_Cache_Admin_Settings {
             $new_input['cloudflare_zone_id'] = sanitize_text_field($input['cloudflare_zone_id']);
         }
 
-        if (isset($input['cloudflare_enabled'])) {
-            $new_input['cloudflare_enabled'] = (bool) $input['cloudflare_enabled'];
-        }
+        // if (isset($input['cloudflare_enabled'])) {
+        //     $new_input['cloudflare_enabled'] = (bool) $input['cloudflare_enabled'];
+        // }
 
         if (isset($input['cloudflare_apo_enabled'])) {
             $new_input['cloudflare_apo_enabled'] = (bool) $input['cloudflare_apo_enabled'];
@@ -296,9 +310,9 @@ class Illios_Cache_Admin_Settings {
             $new_input['varnish_servers'] = sanitize_textarea_field($input['varnish_servers']);
         }
 
-        if (isset($input['varnish_enabled'])) {
-            $new_input['varnish_enabled'] = (bool) $input['varnish_enabled'];
-        }
+        // if (isset($input['varnish_enabled'])) {
+        //     $new_input['varnish_enabled'] = (bool) $input['varnish_enabled'];
+        // }
 
         if (isset($input['varnish_timeout'])) {
             $timeout = (int) $input['varnish_timeout'];
