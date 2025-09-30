@@ -66,8 +66,8 @@ class Illios_Cache_Plugin {
         
         // Theme and plugin change hooks
         add_action('switch_theme', array($this, 'purge_all_caches'));
-        add_action('activated_plugin', array($this, 'purge_all_caches'));
-        add_action('deactivated_plugin', array($this, 'purge_all_caches'));
+        // add_action('activated_plugin', array($this, 'purge_all_caches'));
+        // add_action('deactivated_plugin', array($this, 'purge_all_caches'));
         
         // Initialize admin settings
         if (is_admin()) {
