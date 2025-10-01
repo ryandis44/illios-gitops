@@ -26,11 +26,13 @@ Env (with defaults):
   ALWAYS_ENFORCE=(0/1)
 """
 
-import os
-import time
-import shutil
 import hashlib
+import os
+import re
+import shutil
 import stat
+import time
+
 from pathlib import Path
 
 # -------- Config via env --------
@@ -123,6 +125,89 @@ def files_differ(src: Path, dst: Path) -> bool:
     # Type mismatch (file vs dir)
     return (src.is_dir() != dst.is_dir())
 
+def merge_htaccess_blocks(src: Path, dst: Path, marker: str = "WordPress") -> str:
+    """
+    Merge .htaccess by replacing only the content between BEGIN/END markers.
+    Preserves all other content in the destination file.
+    
+    Args:
+        src: Source .htaccess from repo
+        dst: Destination .htaccess in docroot
+        marker: The marker name (e.g., "WordPress")
+    
+    Returns:
+        The merged content as a string
+    """
+    begin_marker = f"# BEGIN {marker}"
+    end_marker = f"# END {marker}"
+    
+    # Read source content to extract the managed block
+    src_content = src.read_text(encoding="utf-8", errors="ignore")
+    
+    # Extract the BEGIN/END block from source
+    src_pattern = re.compile(
+        rf'^{re.escape(begin_marker)}$.*?^{re.escape(end_marker)}$',
+        re.MULTILINE | re.DOTALL
+    )
+    src_match = src_pattern.search(src_content)
+    
+    if not src_match:
+        log(f"warning: no {marker} block found in source {src}, copying entire file")
+        return src_content
+    
+    managed_block = src_match.group(0)
+    
+    # Read destination (or use empty if doesn't exist)
+    if dst.exists():
+        dst_content = dst.read_text(encoding="utf-8", errors="ignore")
+    else:
+        # No existing file, just use the source content
+        return src_content
+    
+    # Check if destination has the markers
+    dst_match = src_pattern.search(dst_content)
+    
+    if dst_match:
+        # Replace existing block
+        merged = src_pattern.sub(managed_block, dst_content)
+    else:
+        # No existing block in destination, append the managed block
+        if dst_content and not dst_content.endswith('\n'):
+            merged = dst_content + '\n\n' + managed_block + '\n'
+        else:
+            merged = dst_content + '\n' + managed_block + '\n'
+    
+    return merged
+
+
+def apply_htaccess_merge(src: Path, dst: Path, uid: int, gid: int, mode: int) -> None:
+    """
+    Apply merged .htaccess content only if it differs from current destination.
+    """
+    merged_content = merge_htaccess_blocks(src, dst)
+    
+    # Check if update is needed
+    needs_update = False
+    if not dst.exists():
+        needs_update = True
+    else:
+        current_content = dst.read_text(encoding="utf-8", errors="ignore")
+        if current_content != merged_content:
+            needs_update = True
+    
+    if needs_update:
+        # Write atomically
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dst.with_suffix(dst.suffix + ".tmp.merge")
+        tmp.write_text(merged_content, encoding="utf-8")
+        os.chown(tmp, uid, gid)
+        os.chmod(tmp, mode)
+        tmp.replace(dst)
+        log(f"merged and applied {src} -> {dst}")
+    else:
+        # Just ensure metadata is correct
+        ensure_metadata(dst, uid, gid, mode)
+
 def copy_if_different_file(src: Path, dst: Path, uid: int, gid: int, mode: int) -> None:
     """Atomic copy only when content differs; otherwise ensure metadata."""
     if files_differ(src, dst):
@@ -197,7 +282,13 @@ def ensure_core_files(repo_root: Path) -> None:
         if not s.exists():
             log(f"warning: {s} not in repo; skipping")
             continue
-        copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
+        
+        # Special handling for .htaccess - surgical merge
+        if name == ".htaccess":
+            apply_htaccess_merge(s, d, DOC_UID, DOC_GID, CORE_MODE)
+        else:
+            # Standard copy for other files (wp-config.php)
+            copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
 
 def parse_enabled(enabled_path: Path) -> list[str]:
     names: list[str] = []
