@@ -7,5 +7,5 @@
    }
 
    // Require the OIDC Generic Client file
-   require WPMU_PLUGIN_DIR . '/oidc-illios/openid-connect-generic.php'; // Adjust the path if needed
+   require WPMU_PLUGIN_DIR . '/required-by-host/oidc-illios/openid-connect-generic.php'; // Adjust the path if needed
    

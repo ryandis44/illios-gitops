@@ -42,7 +42,7 @@ DOCROOT         = Path(os.getenv("DOCROOT", "/var/www/html"))
 MU_DIR          = DOCROOT / "wp-content" / "mu-plugins"
 
 ENABLED_FILE    = REPO_PLUGINS / "enabled.txt"
-PROXY_LOADER    = REPO_PLUGINS / "proxy-loader.php"
+PROXY_LOADER    = REPO_PLUGINS / "host-dependencies.php"
 
 # Ownership / perms
 DOC_UID         = int(os.getenv("DOC_ID", "33"))   # www-data (Debian/Ubuntu)
@@ -225,7 +225,7 @@ def sync_mu_plugins(repo_root: Path) -> None:
             log(f"warning: plugin '{slug}' not found in repo at {src}")
             continue
 
-        dst = MU_DIR / slug
+        dst = MU_DIR / "required-by-host" / slug
         if src.is_file():
             copy_if_different_file(src, dst, MU_UID, MU_GID, MU_MODE)
         elif src.is_dir():
@@ -235,9 +235,10 @@ def sync_mu_plugins(repo_root: Path) -> None:
 
         log(f"mu-plugin reconciled: {slug}")
 
-    # Remove plugins that are present but not enabled (keep proxy-loader separate)
-    for child in MU_DIR.iterdir():
-        if child.name == "proxy-loader.php":
+    # Remove plugins that are present but not enabled (keep host-dependencies.php separate)
+    src = MU_DIR / "required-by-host"
+    for child in src.iterdir():
+        if child.name == "host-dependencies.php":
             continue
         if child.name not in desired:
             if child.is_dir() and not child.is_symlink():
@@ -246,13 +247,13 @@ def sync_mu_plugins(repo_root: Path) -> None:
                 child.unlink(missing_ok=True)
             log(f"mu-plugin removed (disabled): {child.name}")
 
-    # Ensure proxy-loader (copy-if-different)
+    # Ensure host-dependencies.php (copy-if-different)
     proxy_src = repo_root / PROXY_LOADER
     if proxy_src.exists():
-        proxy_dst = MU_DIR / "proxy-loader.php"
+        proxy_dst = MU_DIR / "host-dependencies.php"
         copy_if_different_file(proxy_src, proxy_dst, MU_UID, MU_GID, MU_MODE)
     else:
-        log(f"warning: proxy-loader not found at {proxy_src}; skipped")
+        log(f"warning: host-dependencies.php not found at {proxy_src}; skipped")
 
 def read_repo_revision(repo_link: Path) -> str:
     """
