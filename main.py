@@ -284,6 +284,7 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
             
         new_content.append("\n\n")
         new_content.append(target_content)
+        new_content = "".join(new_content)
         
         # new_content = source_block + '\n\n' + target_content
     
