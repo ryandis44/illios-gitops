@@ -1,6 +1,6 @@
 <?php
 
-/* BEGIN Host Settings */
+// BEGIN Host Settings
 
 // a helper function to lookup "env_FILE", "env", then fallback
 if (!function_exists('getenv_docker')) {
@@ -138,4 +138,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
 
-/* END Host Settings */
+// END Host Settings

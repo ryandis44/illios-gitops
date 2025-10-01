@@ -188,7 +188,7 @@ def mirror_tree(src: Path, dst: Path, uid: int, gid: int, file_mode: int, dir_mo
             log(f"removed extraneous: {d}")
 
 
-def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end, comment_prefix="#") -> None:
+def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end, name) -> None:
     """
     Synchronizes a marked block in a target file with content from a source file.
     
@@ -199,6 +199,19 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
         block_marker_end: Ending marker (e.g., "# END Host Settings")
     """
     # Read source file
+    
+    new_block_prefix = None
+    match name:
+        
+        case ".htaccess": comment_prefix = "#"
+        
+        case "wp-config.php":
+            comment_prefix = "//"
+            new_block_prefix = "<?php"
+        
+        case _:
+            print(f"Warning: Unsupported file '{name}' for block sync. No action taken.")
+            return
     
     block_marker_begin = f"{comment_prefix} {block_marker_begin}"
     block_marker_end = f"{comment_prefix} {block_marker_end}"
@@ -262,7 +275,17 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
             )
     else:
         # No block found - insert at beginning
-        new_content = source_block + '\n\n' + target_content
+        new_content = []
+        new_content.append(source_block)
+        
+        # Example: Insert <?php for wp-config.php if not present
+        if new_block_prefix and not target_content.lstrip().startswith(new_block_prefix):
+            new_content.append(new_block_prefix)
+            
+        new_content.append("\n\n")
+        new_content.append(target_content)
+        
+        # new_content = source_block + '\n\n' + target_content
     
     # Write back to target file
     with open(target_file_path, 'w', encoding='utf-8') as f:
@@ -292,8 +315,7 @@ def ensure_core_files(repo_root: Path) -> None:
                 d.touch()
                 log(f"created empty {d} for block insertion")
             
-            comment_prefix = "#" if name == ".htaccess" else "//"
-            sync_file_block(d, s, BLOCK_MARKER_BEGIN, BLOCK_MARKER_END, comment_prefix=comment_prefix)
+            sync_file_block(d, s, BLOCK_MARKER_BEGIN, BLOCK_MARKER_END, name)
             ensure_metadata(d, DOC_UID, DOC_GID, CORE_MODE)
         
         else:
