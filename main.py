@@ -236,7 +236,7 @@ def sync_mu_plugins(repo_root: Path) -> None:
         log(f"mu-plugin reconciled: {slug}")
         
     # Remove proxy-loader.php and host plugins in mu-plugins root from grandfathered services
-    for child in src.iterdir():
+    for child in MU_DIR.iterdir():
         if child.name == "proxy-loader.php":
             child.unlink(missing_ok=True)
             log(f"mu-plugin removed (proxy-loader.php deprecated): {child.name}")
