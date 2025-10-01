@@ -207,7 +207,7 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
         
         case "wp-config.php":
             comment_prefix = "//"
-            new_block_prefix = "<?php"
+            new_block_prefix = "<?php\n"
         
         case _:
             print(f"Warning: Unsupported file '{name}' for block sync. No action taken.")
@@ -276,11 +276,12 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
     else:
         # No block found - insert at beginning
         new_content = []
-        new_content.append(source_block)
         
         # Example: Insert <?php for wp-config.php if not present
         if new_block_prefix and not target_content.lstrip().startswith(new_block_prefix):
             new_content.append(new_block_prefix)
+            
+        new_content.append(source_block)
             
         new_content.append("\n\n")
         new_content.append(target_content)
