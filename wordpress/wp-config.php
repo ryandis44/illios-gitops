@@ -1,6 +1,6 @@
 <?php
 
-// BEGIN Host Configurations
+/* BEGIN Host Settings */
 
 // a helper function to lookup "env_FILE", "env", then fallback
 if (!function_exists('getenv_docker')) {
@@ -18,8 +18,6 @@ if (!function_exists('getenv_docker')) {
         }
 }
 
-define('VHP_VARNISH_IP', 'wordpress');
-
 // OpenID Connect Environment Variables
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
 define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
@@ -28,10 +26,6 @@ define( 'OIDC_ENDPOINT_LOGIN_URL', getenv_docker('OIDC_ENDPOINT_LOGIN_URL', 'htt
 define( 'OIDC_ENDPOINT_USERINFO_URL', getenv_docker('OIDC_ENDPOINT_USERINFO_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/userinfo') );
 define( 'OIDC_ENDPOINT_TOKEN_URL', getenv_docker('OIDC_ENDPOINT_TOKEN_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token') );
 define( 'OIDC_ENDPOINT_LOGOUT_URL', getenv_docker('OIDC_ENDPOINT_LOGOUT_URL', 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout') );
-
-// API
-define( 'API_TOKEN', getenv_docker('API_TOKEN', '') );
-define( 'STAGING_API_TOKEN', getenv_docker('STAGING_API_TOKEN', '') );
 
 // Only define OIDC_LOGIN_TYPE if it is set in env; otherwise do not
 // set in WP so users can modify this on their own
@@ -47,17 +41,6 @@ if ($oidcEnforcePrivacy !== '') {
     define('OIDC_ENFORCE_PRIVACY', $oidcEnforcePrivacy);
 }
 
-error_log('OIDC_CLIENT_ID: ' . OIDC_CLIENT_ID);
-error_log('OIDC_CLIENT_SECRET: ' . OIDC_CLIENT_SECRET);
-error_log('OIDC_ENDPOINT_LOGIN_URL: ' . OIDC_ENDPOINT_LOGIN_URL);
-error_log('OIDC_ENDPOINT_USERINFO_URL: ' . OIDC_ENDPOINT_USERINFO_URL);
-error_log('OIDC_ENDPOINT_TOKEN_URL: ' . OIDC_ENDPOINT_TOKEN_URL);
-error_log('OIDC_ENDPOINT_LOGOUT_URL: ' . OIDC_ENDPOINT_LOGOUT_URL);
-error_log('API_TOKEN: ' . API_TOKEN);
-error_log('STAGING_API_TOKEN: ' . STAGING_API_TOKEN);
-
-@ini_set( 'upload_max_filesize' , '512M' );
-@ini_set( 'post_max_size', '512M');
 @ini_set( 'memory_limit', '2048M' );
 @ini_set( 'max_execution_time', '300' );
 @ini_set( 'max_input_time', '300' );
@@ -154,3 +137,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
+
+/* END Host Settings */
