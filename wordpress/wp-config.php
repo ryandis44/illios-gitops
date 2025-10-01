@@ -1,27 +1,6 @@
 <?php
-/**
- * The base configuration for WordPress
- *
- * The wp-config.php creation script uses this file during the installation.
- * You don't have to use the website, you can copy this file to "wp-config.php"
- * and fill in the values.
- *
- * This file contains the following configurations:
- *
- * * Database settings
- * * Secret keys
- * * Database table prefix
- * * ABSPATH
- *
- * This has been slightly modified (to read environment variables) for use in Docker.
- *
- * @link https://developer.wordpress.org/advanced-administration/wordpress/wp-config/
- *
- * @package WordPress
- */
 
-// IMPORTANT: this file needs to stay in-sync with https://github.com/WordPress/WordPress/blob/master/wp-config-sample.php
-// (it gets parsed by the upstream wizard in https://github.com/WordPress/WordPress/blob/f27cb65e1ef25d11b535695a660e7282b98eb742/wp-admin/setup-config.php#L356-L392)
+// BEGIN Host Configurations
 
 // a helper function to lookup "env_FILE", "env", then fallback
 if (!function_exists('getenv_docker')) {
