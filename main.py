@@ -57,6 +57,17 @@ LOOP_SECONDS    = int(os.getenv("LOOP_SECONDS", "10"))
 ALWAYS_ENFORCE  = os.getenv("ALWAYS_ENFORCE", "0").lower() in ("1", "true", "yes", "on")
 LOG_PREFIX      = os.getenv("LOG_PREFIX", "[wp-gitops]")
 
+# Block markers/anchors
+HTACCESS_BEGIN_MARKER   = os.getenv("HTACCESS_BEGIN_MARKER", "# BEGIN Host Settings").strip()
+HTACCESS_END_MARKER     = os.getenv("HTACCESS_END_MARKER",   "# END Host Settings").strip()
+HTACCESS_INSERT_ANCHOR  = os.getenv("HTACCESS_INSERT_ANCHOR", "").strip() or None  # if set, insert before; else append
+
+WPCONFIG_BEGIN_MARKER   = os.getenv("WPCONFIG_BEGIN_MARKER", "/* BEGIN Host Settings */").strip()
+WPCONFIG_END_MARKER     = os.getenv("WPCONFIG_END_MARKER",   "/* END Host Settings */").strip()
+WPCONFIG_INSERT_ANCHOR  = os.getenv("WPCONFIG_INSERT_ANCHOR",
+                                    "/* That's all, stop editing! Happy publishing. */").strip()
+
+
 # Only these two top-level files are managed from repo/wordpress
 CORE_ALLOWED = {"wp-config.php", ".htaccess"}
 
@@ -82,6 +93,60 @@ def safe_copy_file(src: Path, dst: Path, uid: int, gid: int, mode: int) -> None:
     os.chmod(tmp, mode)
     tmp.replace(dst)  # atomic replace
     log(f"applied {src} -> {dst}")
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+
+def write_text_atomic(dst: Path, text: str, uid: int, gid: int, mode: int) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst.with_suffix(dst.suffix + ".tmp.write")
+    tmp.write_text(text, encoding="utf-8")
+    os.chown(tmp, uid, gid)
+    os.chmod(tmp, mode)
+    tmp.replace(dst)
+    log(f"applied {dst}")
+
+def _find_block_span(lines: list[str], begin: str, end: str) -> tuple[int, int] | None:
+    """Return (start_idx, end_idx) inclusive for lines whose stripped text equals markers."""
+    start = None
+    for i, ln in enumerate(lines):
+        if ln.strip() == begin:
+            start = i; break
+    if start is None: return None
+    for j in range(start, len(lines)):
+        if lines[j].strip() == end:
+            return (start, j)
+    return None
+
+def _extract_block_lines(text: str, begin: str, end: str) -> list[str] | None:
+    lines = text.splitlines(keepends=True)
+    span = _find_block_span(lines, begin, end)
+    if not span: return None
+    s, e = span
+    return lines[s:e+1]
+
+def _replace_or_insert_block(dst_text: str,
+                             block_lines: list[str],
+                             begin: str,
+                             end: str,
+                             insert_anchor: str | None) -> str:
+    """Replace existing [begin..end] (inclusive). If absent, insert before anchor or append."""
+    lines = dst_text.splitlines(keepends=True) or []
+    span = _find_block_span(lines, begin, end)
+    if span:
+        s, e = span
+        new_lines = lines[:s] + block_lines + lines[e+1:]
+        return "".join(new_lines)
+
+    if insert_anchor:
+        for idx, ln in enumerate(lines):
+            if insert_anchor in ln:
+                # (optional) ensure a blank line before the block
+                return "".join(lines[:idx] + block_lines + lines[idx:])
+    # Append
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] = lines[-1] + "\n"
+    return "".join(lines + block_lines)
 
 def ensure_metadata(p: Path, uid: int, gid: int, mode: int | None = None) -> None:
     """Apply uid/gid/mode only if different."""
@@ -184,20 +249,50 @@ def mirror_tree(src: Path, dst: Path, uid: int, gid: int, file_mode: int, dir_mo
 
 # -------- Reconcile routines --------
 
-def ensure_core_files(repo_root: Path) -> None:
-    """Enforce only the two allowed top-level files from repo/wordpress -> DOCROOT."""
-    src_dir = repo_root / REPO_WORDPRESS
-    if not src_dir.exists():
-        log(f"repo path missing: {src_dir} (skip core reconcile)")
+def sync_htaccess_block(repo_root: Path) -> None:
+    """Replace only the WordPress-managed block in .htaccess."""
+    src = repo_root / REPO_WORDPRESS / ".htaccess"
+    dst = DOCROOT / ".htaccess"
+
+    repo_text = read_text(src)
+    block = _extract_block_lines(repo_text, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER)
+    if not block:
+        log(f"warning: repo .htaccess lacks markers '{HTACCESS_BEGIN_MARKER}'..'{HTACCESS_END_MARKER}' — skipped")
         return
 
-    for name in CORE_ALLOWED:
-        s = src_dir / name
-        d = DOCROOT / name
-        if not s.exists():
-            log(f"warning: {s} not in repo; skipping")
-            continue
-        copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
+    live_text = read_text(dst)
+    new_text = _replace_or_insert_block(live_text, block, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER, HTACCESS_INSERT_ANCHOR)
+
+    if new_text != live_text or not dst.exists():
+        write_text_atomic(dst, new_text, DOC_UID, DOC_GID, CORE_MODE)
+    else:
+        ensure_metadata(dst, DOC_UID, DOC_GID, CORE_MODE)
+
+def sync_wp_config_block(repo_root: Path) -> None:
+    """Replace only the host-managed block in wp-config.php; insert before anchor if missing."""
+    src = repo_root / REPO_WORDPRESS / "wp-config.php"
+    dst = DOCROOT / "wp-config.php"
+
+    repo_text = read_text(src)
+    block = _extract_block_lines(repo_text, WPCONFIG_BEGIN_MARKER, WPCONFIG_END_MARKER)
+    if not block:
+        log(f"warning: repo wp-config.php lacks markers '{WPCONFIG_BEGIN_MARKER}'..'{WPCONFIG_END_MARKER}' — skipped")
+        return
+
+    live_text = read_text(dst)
+    new_text = _replace_or_insert_block(live_text, block, WPCONFIG_BEGIN_MARKER, WPCONFIG_END_MARKER, WPCONFIG_INSERT_ANCHOR)
+
+    if new_text != live_text or not dst.exists():
+        write_text_atomic(dst, new_text, DOC_UID, DOC_GID, CORE_MODE)
+    else:
+        ensure_metadata(dst, DOC_UID, DOC_GID, CORE_MODE)
+
+
+def ensure_core_files(repo_root: Path) -> None:
+    """Enforce blocks for .htaccess (WP-managed) and wp-config.php (host-managed)."""
+    sync_htaccess_block(repo_root)
+    sync_wp_config_block(repo_root)
+
 
 def parse_enabled(enabled_path: Path) -> list[str]:
     names: list[str] = []
