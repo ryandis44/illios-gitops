@@ -234,6 +234,18 @@ def sync_mu_plugins(repo_root: Path) -> None:
             log(f"warning: '{slug}' is neither file nor directory; skipped")
 
         log(f"mu-plugin reconciled: {slug}")
+        
+    # Remove proxy-loader.php and host plugins in mu-plugins root from grandfathered services
+    for child in src.iterdir():
+        if child.name == "proxy-loader.php":
+            child.unlink(missing_ok=True)
+            log(f"mu-plugin removed (proxy-loader.php deprecated): {child.name}")
+        if child.name in desired:
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child, ignore_errors=True)
+            else:
+                child.unlink(missing_ok=True)
+            log(f"mu-plugin removed (at mu-plugins root): {child.name}")
 
     # Remove plugins that are present but not enabled (keep host-dependencies.php separate)
     src = MU_DIR / "required-by-host"
