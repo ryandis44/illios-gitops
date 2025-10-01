@@ -106,6 +106,26 @@ def write_text_atomic(dst: Path, text: str, uid: int, gid: int, mode: int) -> No
     tmp.replace(dst)
     log(f"applied {dst}")
 
+def _prepend_block(dst_text: str, block_lines: list[str]) -> str:
+    """Put the managed block at the very top of the file (block includes markers)."""
+    return "".join(block_lines) + dst_text
+
+def _insert_block_after_php_open(dst_text: str, block_lines: list[str]) -> str:
+    """
+    Insert the managed block right after the first '<?php'.
+    If '<?php' is not found, fall back to prepending at the top.
+    """
+    idx = dst_text.find("<?php")
+    if idx == -1:
+        return "".join(block_lines) + dst_text
+    line_end = dst_text.find("\n", idx)
+    if line_end == -1:
+        # no newline after the open tag; add one, then block
+        return dst_text + "\n" + "".join(block_lines)
+    # insert after the line that contains the open tag
+    return dst_text[:line_end + 1] + "".join(block_lines) + dst_text[line_end + 1:]
+
+
 def _find_block_span(lines: list[str], begin: str, end: str) -> tuple[int, int] | None:
     """Return (start_idx, end_idx) inclusive for lines whose stripped text equals markers."""
     start = None
@@ -261,7 +281,16 @@ def sync_htaccess_block(repo_root: Path) -> None:
         return
 
     live_text = read_text(dst)
-    new_text = _replace_or_insert_block(live_text, block, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER, HTACCESS_INSERT_ANCHOR)
+    # If the live file already has the block → replace; else prepend to top (or before anchor if you set one)
+    lines = live_text.splitlines(keepends=True)
+    span = _find_block_span(lines, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER)
+    if span:
+        new_text = _replace_or_insert_block(live_text, block, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER, HTACCESS_INSERT_ANCHOR)
+    else:
+        if HTACCESS_INSERT_ANCHOR:
+            new_text = _replace_or_insert_block(live_text, block, HTACCESS_BEGIN_MARKER, HTACCESS_END_MARKER, HTACCESS_INSERT_ANCHOR)
+        else:
+            new_text = _prepend_block(live_text, block)
 
     if new_text != live_text or not dst.exists():
         write_text_atomic(dst, new_text, DOC_UID, DOC_GID, CORE_MODE)
@@ -280,7 +309,13 @@ def sync_wp_config_block(repo_root: Path) -> None:
         return
 
     live_text = read_text(dst)
-    new_text = _replace_or_insert_block(live_text, block, WPCONFIG_BEGIN_MARKER, WPCONFIG_END_MARKER, WPCONFIG_INSERT_ANCHOR)
+    # If the live file already has the block → replace; else insert right after '<?php'
+    lines = live_text.splitlines(keepends=True)
+    span = _find_block_span(lines, WPCONFIG_BEGIN_MARKER, WPCONFIG_END_MARKER)
+    if span:
+        new_text = _replace_or_insert_block(live_text, block, WPCONFIG_BEGIN_MARKER, WPCONFIG_END_MARKER, WPCONFIG_INSERT_ANCHOR)
+    else:
+        new_text = _insert_block_after_php_open(live_text, block)
 
     if new_text != live_text or not dst.exists():
         write_text_atomic(dst, new_text, DOC_UID, DOC_GID, CORE_MODE)
