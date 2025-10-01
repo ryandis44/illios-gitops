@@ -46,8 +46,8 @@ MU_DIR          = DOCROOT / "wp-content" / "mu-plugins"
 ENABLED_FILE    = REPO_PLUGINS / "enabled.txt"
 PROXY_LOADER    = REPO_PLUGINS / "host-dependencies.php"
 
-BLOCK_MARKER_BEGIN = str(os.getenv("BLOCK_MARKER_BEGIN", "# BEGIN Host Settings"))
-BLOCK_MARKER_END   = str(os.getenv("BLOCK_MARKER_END", "# END Host Settings"))
+BLOCK_MARKER_BEGIN = str(os.getenv("BLOCK_MARKER_BEGIN", "BEGIN Host Settings"))
+BLOCK_MARKER_END   = str(os.getenv("BLOCK_MARKER_END", "END Host Settings"))
 
 # Ownership / perms
 DOC_UID         = int(os.getenv("DOC_ID", "33"))   # www-data (Debian/Ubuntu)
@@ -188,7 +188,7 @@ def mirror_tree(src: Path, dst: Path, uid: int, gid: int, file_mode: int, dir_mo
             log(f"removed extraneous: {d}")
 
 
-def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end):
+def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end, comment_prefix="#") -> None:
     """
     Synchronizes a marked block in a target file with content from a source file.
     
@@ -199,6 +199,10 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
         block_marker_end: Ending marker (e.g., "# END Host Settings")
     """
     # Read source file
+    
+    block_marker_begin = f"{comment_prefix} {block_marker_begin}"
+    block_marker_end = f"{comment_prefix} {block_marker_end}"
+    
     with open(source_file_path, 'r', encoding='utf-8') as f:
         source_content = f.read()
     
@@ -282,14 +286,16 @@ def ensure_core_files(repo_root: Path) -> None:
             log(f"warning: {s} not in repo; skipping")
             continue
         
-        if name == ".htaccess":
+        if name in {".htaccess", "wp-config.php"}:
             if not d.exists():
                 # Create empty .htaccess if missing to ensure block insertion
                 d.touch()
                 log(f"created empty {d} for block insertion")
-                
-            sync_file_block(d, s, BLOCK_MARKER_BEGIN, BLOCK_MARKER_END)
+            
+            comment_prefix = "#" if name == ".htaccess" else "//"
+            sync_file_block(d, s, BLOCK_MARKER_BEGIN, BLOCK_MARKER_END, comment_prefix=comment_prefix)
             ensure_metadata(d, DOC_UID, DOC_GID, CORE_MODE)
+        
         else:
             copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
 
