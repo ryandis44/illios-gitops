@@ -28,6 +28,7 @@ Env (with defaults):
 
 import hashlib
 import os
+import re
 import shutil
 import stat
 import time
@@ -44,6 +45,9 @@ MU_DIR          = DOCROOT / "wp-content" / "mu-plugins"
 
 ENABLED_FILE    = REPO_PLUGINS / "enabled.txt"
 PROXY_LOADER    = REPO_PLUGINS / "host-dependencies.php"
+
+BLOCK_MARKER_BEGIN = str(os.getenv("BLOCK_MARKER_BEGIN", "# BEGIN Host Settings"))
+BLOCK_MARKER_END   = str(os.getenv("BLOCK_MARKER_END", "# END Host Settings"))
 
 # Ownership / perms
 DOC_UID         = int(os.getenv("DOC_ID", "33"))   # www-data (Debian/Ubuntu)
@@ -183,6 +187,85 @@ def mirror_tree(src: Path, dst: Path, uid: int, gid: int, file_mode: int, dir_mo
                 d.unlink(missing_ok=True)
             log(f"removed extraneous: {d}")
 
+
+def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end):
+    """
+    Synchronizes a marked block in a target file with content from a source file.
+    
+    Args:
+        target_file_path: Path to the file to be modified (e.g., .htaccess)
+        source_file_path: Path to the source file from repo
+        block_marker_begin: Beginning marker (e.g., "# BEGIN Host Settings")
+        block_marker_end: Ending marker (e.g., "# END Host Settings")
+    """
+    # Read source file
+    with open(source_file_path, 'r', encoding='utf-8') as f:
+        source_content = f.read()
+    
+    # Verify source file has the block markers
+    if block_marker_begin not in source_content or block_marker_end not in source_content:
+        print(f"Warning: Source file '{source_file_path}' does not contain block markers. No action taken.")
+        return
+    
+    # Extract the block from source (including markers)
+    source_pattern = re.escape(block_marker_begin) + r'(.*?)' + re.escape(block_marker_end)
+    source_match = re.search(source_pattern, source_content, re.DOTALL)
+    
+    if not source_match:
+        print(f"Warning: Could not extract block from source file. No action taken.")
+        return
+    
+    # Get the full block including markers
+    source_block = source_content[source_match.start():source_match.end()]
+    
+    # Read target file
+    with open(target_file_path, 'r', encoding='utf-8') as f:
+        target_content = f.read()
+    
+    # Check if block exists in target file
+    target_pattern = re.escape(block_marker_begin) + r'(.*?)' + re.escape(block_marker_end)
+    target_matches = list(re.finditer(target_pattern, target_content, re.DOTALL))
+    
+    if len(target_matches) > 1:
+        # Multiple blocks found - delete all and treat as no block
+        for match in reversed(target_matches):
+            # Remove the block and any trailing newline
+            start = match.start()
+            end = match.end()
+            # Check if there's a newline after the block
+            if end < len(target_content) and target_content[end] == '\n':
+                end += 1
+            target_content = target_content[:start] + target_content[end:]
+        
+        # Now insert at the beginning
+        new_content = source_block + '\n\n' + target_content
+        
+    elif len(target_matches) == 1:
+        # One block found - check if it matches
+        target_match = target_matches[0]
+        existing_block = target_content[target_match.start():target_match.end()]
+        
+        if existing_block.strip() == source_block.strip():
+            # Block matches - no action needed
+            print("Block already matches source. No changes made.")
+            return
+        else:
+            # Block doesn't match - replace it
+            new_content = (
+                target_content[:target_match.start()] + 
+                source_block + 
+                target_content[target_match.end():]
+            )
+    else:
+        # No block found - insert at beginning
+        new_content = source_block + '\n\n' + target_content
+    
+    # Write back to target file
+    with open(target_file_path, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    
+    print(f"Successfully synced block in '{target_file_path}'")
+
 # -------- Reconcile routines --------
 
 def ensure_core_files(repo_root: Path) -> None:
@@ -198,7 +281,17 @@ def ensure_core_files(repo_root: Path) -> None:
         if not s.exists():
             log(f"warning: {s} not in repo; skipping")
             continue
-        copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
+        
+        if name == ".htaccess":
+            if not d.exists():
+                # Create empty .htaccess if missing to ensure block insertion
+                d.touch()
+                log(f"created empty {d} for block insertion")
+                
+            sync_file_block(d, s, BLOCK_MARKER_BEGIN, BLOCK_MARKER_END)
+            ensure_metadata(d, DOC_UID, DOC_GID, CORE_MODE)
+        else:
+            copy_if_different_file(s, d, DOC_UID, DOC_GID, CORE_MODE)
 
 def parse_enabled(enabled_path: Path) -> list[str]:
     names: list[str] = []
