@@ -278,8 +278,19 @@ def sync_file_block(target_file_path, source_file_path, block_marker_begin, bloc
         new_content = []
         
         # Example: Insert <?php for wp-config.php if not present
-        if new_block_prefix and not target_content.lstrip().startswith(new_block_prefix):
+        
+        if new_block_prefix:
+            # Remove the prefix from target_content if it exists anywhere
+            if new_block_prefix in target_content:
+                target_content = target_content.replace(new_block_prefix, "", 1).lstrip()
+            
+            # Remove the prefix from source_block if it exists
+            if new_block_prefix in source_block:
+                source_block = source_block.replace(new_block_prefix, "", 1).lstrip()
+            
+            # Add prefix at the top
             new_content.append(new_block_prefix)
+            new_content.append("\n")
             
         new_content.append(source_block)
             
