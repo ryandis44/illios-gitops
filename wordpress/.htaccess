@@ -1,4 +1,13 @@
 # BEGIN Host Settings
+
+# NOTICE: Any changes made to this block
+# will be overwritten immediately.
+#
+# If you need to make changes, make them
+# before or after the 'Host Settings'
+# block.
+
 php_value upload_max_filesize 100M
 php_value post_max_size 100M
+
 # END Host Settings
