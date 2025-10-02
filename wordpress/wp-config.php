@@ -21,6 +21,14 @@
  *      Any changes made before or after the block will be
  *      preserved and respected.
  * 
+ *      Any changes to the block markers (the lines with
+ *     'BEGIN Host Settings' and 'END Host Settings') may
+ *      cause the block to be recreated or duplicated.
+ * 
+ *      If you run into issues and need to reset, delete
+ *      the entire file or delete all text inside; the
+ *      file will be recreated with this block intact.
+ * 
  */
 
 // a helper function to lookup "env_FILE", "env", then fallback

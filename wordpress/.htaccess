@@ -1,11 +1,33 @@
 # BEGIN Host Settings
 
-# NOTICE: Any changes made to this block
-# will be overwritten immediately.
 #
-# If you need to make changes, make them
-# before or after the 'Host Settings'
-# block.
+# 
+#      ###########################################################
+#      #                                                         #
+#      #        NOTICE: Read before modifying this file or       #
+#      #           your changes could be overwritten!            #
+#      #                                                         #
+#      ###########################################################
+# 
+#      The 'Host Settings' block is managed by the host.
+#      
+#      The settings here are required for the site to run
+#      properly. Any changes made to this block will be
+#      overwritten. If the block is deleted, it will be
+#      recreated and placed at the beginning of the file.
+# 
+#      Any changes made before or after the block will be
+#      preserved and respected.
+# 
+#      Any changes to the block markers (the lines with
+#     'BEGIN Host Settings' and 'END Host Settings') may
+#      cause the block to be recreated or duplicated.
+# 
+#      If you run into issues and need to reset, delete
+#      the entire file or delete all text inside; the
+#      file will be recreated with this block intact.
+# 
+#
 
 php_value upload_max_filesize 100M
 php_value post_max_size 100M
