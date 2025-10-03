@@ -1,0 +1,372 @@
+/* General Admin Page - matching original wrap structure */
+.wrap {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 20px 0;
+}
+
+/* Card sections - preserving original card styling */
+.card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin: 20px 0;
+    padding: 20px;
+    position: relative;
+    border-radius: 3px;
+}
+
+.card h2 {
+    margin: 0 0 1em 0;
+    font-size: 1.3em;
+    padding: 0;
+}
+
+.card p {
+    margin: 0 0 1em 0;
+}
+
+/* Button styling - preserving original WordPress admin styles */
+.button {
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 13px;
+    height: 28px;
+    line-height: 26px;
+    margin: 0;
+    padding: 0 10px 1px;
+    text-decoration: none;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.button-primary {
+    background: #0073aa;
+    border-color: #0073aa;
+    color: #fff;
+}
+
+.button-primary:hover {
+    background: #006799;
+    border-color: #006799;
+}
+
+.button-secondary {
+    background: #f3f5f6;
+    border-color: #c3c4c7;
+    color: #50575e;
+}
+
+.button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #1d2327;
+}
+
+/* Input field styling to match WordPress admin */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+textarea {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    color: #32373c;
+    outline: 0;
+    transition: .05s border-color ease-in-out;
+    border-radius: 3px;
+    padding: 3px 5px;
+    font-size: 14px;
+    line-height: 2.14285714;
+    box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 1px #007cba;
+}
+
+.regular-text {
+    width: 25em;
+}
+
+.small-text {
+    width: 6em;
+}
+
+.large-text {
+    width: 99%;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+input[type="checkbox"] + label {
+    vertical-align: middle;
+    font-weight: 400;
+}
+
+/* Field descriptions */
+.description {
+    color: #646970;
+    font-size: 13px;
+    font-style: normal;
+    margin: 5px 0 0 0;
+    display: block;
+}
+
+/* Section styling to match WordPress admin */
+h2 {
+    font-size: 1.3em;
+    margin: 0.83em 0;
+    color: #23282d;
+}
+
+/* Disabled field styling */
+input[disabled],
+textarea[disabled] {
+    background-color: #f9f9f9;
+    border-color: #ddd;
+    color: #a0a5aa;
+    cursor: default;
+}
+
+/* Advanced controls styling */
+.cloudflare-advanced-btn {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+/* Field-specific classes for dynamic styling */
+.cloudflare-field[disabled],
+.varnish-field[disabled],
+.apo-field[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Global Dev Mode Status Display */
+#global-dev-mode-status {
+    display: none;
+    border-left: 4px solid #d63638;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+#global-dev-mode-info {
+    font-size: 0.95em;
+    margin: 0;
+}
+
+/* Sticky Notification Container */
+.sticky-notice-container {
+    position: fixed;
+    top: 32px; /* Account for WordPress admin bar */
+    left: 0;
+    right: 0;
+    z-index: 999999;
+    pointer-events: none; /* Allow clicks through empty space */
+}
+
+/* Notice styling - matching WordPress admin with sticky positioning */
+.notice {
+    background: #fff;
+    border-left: 4px solid #fff;
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,.1), 0 4px 12px 0 rgba(0,0,0,.1);
+    margin: 5px 15px 2px;
+    padding: 1px 12px;
+    pointer-events: auto; /* Re-enable clicks on the notice itself */
+    border-radius: 4px;
+}
+
+.notice-success {
+    border-left-color: #46b450;
+}
+
+.notice-error {
+    border-left-color: #dc3232;
+}
+
+.notice p {
+    margin: 0.5em 0;
+    padding: 2px;
+}
+
+.is-dismissible {
+    position: relative;
+    padding-right: 38px;
+}
+
+/* Dismiss button for sticky notices */
+.notice-dismiss {
+    position: absolute;
+    top: 0;
+    right: 1px;
+    border: none;
+    margin: 0;
+    padding: 9px;
+    background: none;
+    color: #787c82;
+    cursor: pointer;
+    width: 38px;
+    height: 38px;
+    text-align: center;
+}
+
+.notice-dismiss:before {
+    content: '\f153';
+    display: inline-block;
+    font: normal 16px/1 dashicons;
+    speak: never;
+    height: 16px;
+    text-align: center;
+    width: 16px;
+    vertical-align: middle;
+}
+
+.notice-dismiss:hover {
+    color: #c3c4c7;
+}
+
+/* Animation for sticky notices */
+.sticky-notice-enter {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.sticky-notice-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+    transition: all 0.3s ease-in-out;
+}
+
+.sticky-notice-exit {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.sticky-notice-exit-active {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Table form styling to match WordPress admin */
+.form-table {
+    border-collapse: collapse;
+    margin-top: 0.5em;
+    width: 100%;
+}
+
+.form-table th {
+    color: #23282d;
+    font-weight: 400;
+    padding: 20px 10px 20px 0;
+    text-align: left;
+    vertical-align: top;
+    width: 200px;
+}
+
+.form-table td {
+    padding: 15px 10px;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.form-table tr {
+    border-bottom: 1px solid #f1f1f1;
+}
+
+/* Advanced Cloudflare controls section styling */
+div[style*="margin-top: 15px"] {
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+/* Warning boxes */
+div[style*="background: #fff3cd"] {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    color: #856404;
+}
+
+/* Section headers with larger font size */
+span[style*="font-size: 1.2em"] {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+/* Section wrapper styling */
+.illios-section {
+    margin: 30px 0;
+    background: transparent;
+    padding: 20px 0;
+}
+
+.illios-section h2 {
+    margin: 0 0 10px 0;
+    padding: 0;
+    font-size: 1.3em;
+    color: #23282d;
+}
+
+.illios-section .section-description {
+    margin-bottom: 20px;
+}
+
+.illios-section .section-description p {
+    margin: 5px 0;
+    color: #646970;
+}
+
+/* Cloudflare branded section */
+.illios-cloudflare-section {
+    border-left: 4px solid #e5892b;
+    padding-left: 20px;
+    background: linear-gradient(90deg, rgba(229, 137, 43, 0.02) 0%, transparent 400px);
+}
+
+/* Varnish branded section */
+.illios-varnish-section {
+    border-left: 4px solid #7e549b;
+    padding-left: 20px;
+    background: linear-gradient(90deg, rgba(126, 84, 155, 0.02) 0%, transparent 400px);
+}
+
+/* Make sure form tables inside sections don't have extra margins */
+.illios-section .form-table {
+    margin-top: 0;
+    background: transparent;
+}
+
+.varnish-advanced-btn {
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+/* Responsive adjustments for sticky notices */
+@media screen and (max-width: 782px) {
+    .sticky-notice-container {
+        top: 46px; /* Adjust for mobile WordPress admin bar */
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .sticky-notice-container {
+        top: 0; /* No admin bar on very small screens */
+    }
+}
