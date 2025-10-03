@@ -50,6 +50,10 @@ if (!function_exists('getenv_docker')) {
 // Table prefix
 $table_prefix = getenv_docker('WORDPRESS_TABLE_PREFIX', 'wp_');
 
+// Cloudflare Variables
+define( 'CLOUDFLARE_ZONE_ID ', getenv_docker('CLOUDFLARE_ZONE_ID', '') );
+define( 'CLOUDFLARE_API_TOKEN ', getenv_docker('CLOUDFLARE_API_TOKEN', '') );
+
 // SSO Variables
 define( 'OIDC_CLIENT_ID', getenv_docker('OIDC_CLIENT_ID', '') );
 define( 'OIDC_CLIENT_SECRET', getenv_docker('OIDC_CLIENT_SECRET', '') );
