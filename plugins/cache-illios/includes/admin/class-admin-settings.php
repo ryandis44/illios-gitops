@@ -332,8 +332,8 @@ class Illios_Cache_Admin_Settings {
 
     public function add_options_page() {
         add_options_page(
-            'Illios Cache Settings',
-            'Illios Cache',
+            'Manage Cache Settings',
+            'Manage Cache',
             'manage_options',
             'illios-cache-admin',
             array($this, 'render_page')

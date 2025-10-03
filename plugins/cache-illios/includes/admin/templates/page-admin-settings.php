@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap illios-cache-admin-wrap">
-    <h1><?php esc_html_e('Illios Cache Settings', 'illios-cache'); ?></h1>
+    <h1><?php esc_html_e('Manage Cache Settings', 'illios-cache'); ?></h1>
 
     <form method="post" action="options.php" id="illios-cache-settings-form">
         <?php settings_fields('illios_cache_settings_group'); ?>

@@ -329,7 +329,7 @@ class Illios_Cache_Plugin {
 
         $wp_admin_bar->add_menu(array(
             'id' => 'illios-cache',
-            'title' => 'Illios Cache',
+            'title' => 'Manage Cache',
             'href' => admin_url('options-general.php?page=illios-cache-admin')
         ));
 
