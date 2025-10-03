@@ -1,3 +1,0 @@
-[submodule "plugins/oidc-illios"]
-	path = plugins/oidc-illios
-	url = https://github.com/oidc-wp/openid-connect-generic.git
