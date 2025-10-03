@@ -343,14 +343,14 @@ class Illios_Cache_Plugin {
         $wp_admin_bar->add_menu(array(
             'id' => 'illios-cache-purge-cf',
             'parent' => 'illios-cache',
-            'title' => 'Purge Cloudflare',
+            'title' => 'Purge Cloudflare Cache',
             'href' => wp_nonce_url(admin_url('admin-post.php?action=illios_cache_purge_cf'), 'illios_cache_purge_cf')
         ));
 
         $wp_admin_bar->add_menu(array(
             'id' => 'illios-cache-purge-varnish',
             'parent' => 'illios-cache',
-            'title' => 'Purge Varnish',
+            'title' => 'Purge Varnish Cache',
             'href' => wp_nonce_url(admin_url('admin-post.php?action=illios_cache_purge_varnish'), 'illios_cache_purge_varnish')
         ));
     }
