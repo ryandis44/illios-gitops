@@ -50,6 +50,10 @@ if (!function_exists('getenv_docker')) {
 // Table prefix
 $table_prefix = getenv_docker('WORDPRESS_TABLE_PREFIX', 'wp_');
 
+// Site URLs
+define( 'WP_HOME', getenv_docker('WORDPRESS_URL', '') );
+define( 'WP_SITEURL', getenv_docker('WORDPRESS_URL', '') );
+
 // Cloudflare Variables
 define( 'CLOUDFLARE_ZONE_ID ', getenv_docker('CLOUDFLARE_ZONE_ID', '') );
 define( 'CLOUDFLARE_API_TOKEN ', getenv_docker('CLOUDFLARE_API_TOKEN', '') );
