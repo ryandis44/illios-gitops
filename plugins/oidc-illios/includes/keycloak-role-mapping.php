@@ -57,14 +57,14 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
     }
 
     // Ensure custom roles exist. Also runs as an init action.
-    if ( ! get_role('superadmin') ) {
-        add_role('superadmin', 'Super Administrator', ['read' => true]);
+    if ( ! get_role('ssoadmin') ) {
+        add_role('ssoadmin', 'Admin - SSO', ['read' => true]);
     }
-    if ( ! get_role('siteowner') ) {
-        add_role('siteowner', 'Site Owner', ['read' => true]);
+    if ( ! get_role('ssoowner') ) {
+        add_role('ssoowner', 'Owner - SSO', ['read' => true]);
     }
-    if ( ! get_role('contractor') ) {
-        add_role('contractor', 'Contractor', ['read' => true]);
+    if ( ! get_role('ssocontractor') ) {
+        add_role('ssocontractor', 'Contractor - SSO', ['read' => true]);
     }
 
 
@@ -78,7 +78,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
         //         if ( $group == 'GIGACHADMIN' ) {
         //             if ( $role_weight < 1000 ) {
         //                 $role_weight = 1000;
-        //                 $user->set_role('superadmin');
+        //                 $user->set_role('ssoadmin');
         //             } else {
         //                 $user->set_role('');
         //             }
@@ -96,23 +96,23 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
                     // Iterate through all (Keycloak client) roles and assign WordPress roles.
                     // Roles are weighted based off permission level to prevent an administrator
-                    // from being demoted to a contractor if they have both roles in Keycloak
+                    // from being demoted to a ssocontractor if they have both roles in Keycloak
                     foreach ( $roles_data as $role ) {
 
-                        if ( $role == 'owner' || $role == 'siteowner' ) {
+                        if ( $role == 'owner' || $role == 'ssoowner' ) {
                             if ( $role_weight < 500 ) {
                                 $role_weight = 500;
-                                $user->set_role('siteowner');
+                                $user->set_role('ssoowner');
                             }
                         } else if ( $role == 'admin' || $role == 'administrator' ) {
                             if ( $role_weight < 100 ) {
                                 $role_weight = 100;
-                                $user->set_role('superadmin');
+                                $user->set_role('ssoadmin');
                             }
-                        } else if ( $role == 'contractor' ) {
+                        } else if ( $role == 'ssocontractor' ) {
                             if ( $role_weight < 50 ) {
                                 $role_weight = 50;
-                                $user->set_role('contractor');
+                                $user->set_role('ssocontractor');
                             }
                         } else {
                             $user->set_role('');
@@ -140,7 +140,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
 
 
 
-const GOD_ROLES = [ 'superadmin', 'siteowner', 'contractor' ];
+const GOD_ROLES = [ 'ssoadmin', 'ssoowner', 'ssocontractor' ];
 
 /**
  * Helper: does the user have any of our special roles?
@@ -198,9 +198,9 @@ add_filter( 'user_has_cap', function( $allcaps, $caps, $args, $user ) {
  */
 add_action( 'init', function () {
 	$labels = [
-		'superadmin' => 'Super Administrator',
-		'siteowner'  => 'Site Owner',
-		'contractor' => 'Contractor',
+		'ssoadmin' => 'Admin - SSO',
+		'ssoowner'  => 'Owner - SSO',
+		'ssocontractor' => 'Contractor - SSO',
 	];
 	foreach ( $labels as $slug => $label ) {
 		if ( ! get_role( $slug ) ) {
