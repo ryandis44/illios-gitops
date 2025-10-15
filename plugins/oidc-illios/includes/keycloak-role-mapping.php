@@ -109,7 +109,7 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
                                 $role_weight = 100;
                                 $user->set_role('ssoadmin');
                             }
-                        } else if ( $role == 'ssocontractor' ) {
+                        } else if ( $role == 'contractor' ) {
                             if ( $role_weight < 50 ) {
                                 $role_weight = 50;
                                 $user->set_role('ssocontractor');
