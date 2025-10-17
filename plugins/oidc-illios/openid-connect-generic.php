@@ -434,3 +434,4 @@ register_deactivation_hook( __FILE__, array( 'OpenID_Connect_Generic', 'deactiva
 // Provide publicly accessible plugin helper functions.
 require_once 'includes/functions.php';
 include_once 'includes/keycloak-role-mapping.php';
+include_once 'includes/auto-sso-login-endpoint.php';
