@@ -188,6 +188,20 @@ def mirror_tree(src: Path, dst: Path, uid: int, gid: int, file_mode: int, dir_mo
             log(f"removed extraneous: {d}")
 
 
+def ensure_mu_plugins_dir() -> None:
+    """Make sure DOCROOT/wp-content AND .../mu-plugins exists with the doc user ownership and mode"""
+    DOCROOT.mkdir(parents=True, exist_ok=True)
+    ensure_metadata(DOCROOT, DOC_UID, DOC_GID)
+
+    wp_content = DOCROOT / "wp-content"
+    wp_content.mkdir(exist_ok=True)
+    ensure_metadata(wp_content, DOC_UID, DOC_GID, 0o777)
+
+    mu_plugins = wp_content / "mu-plugins"
+    mu_plugins.mkdir(exist_ok=True)
+    ensure_metadata(mu_plugins, DOC_UID, DOC_GID, 0o777)
+
+
 def sync_file_block(target_file_path, source_file_path, block_marker_begin, block_marker_end, name) -> None:
     """
     Synchronizes a marked block in a target file with content from a source file.
@@ -348,7 +362,7 @@ def parse_enabled(enabled_path: Path) -> list[str]:
 
 def sync_mu_plugins(repo_root: Path) -> None:
     """Mirror only enabled repo plugins into mu-plugins with copy-if-different."""
-    MU_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_mu_plugins_dir()
 
     enabled = set(parse_enabled(repo_root / ENABLED_FILE))
     desired = set(enabled)
