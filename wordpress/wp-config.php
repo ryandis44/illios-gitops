@@ -47,6 +47,10 @@ if (!function_exists('getenv_docker')) {
         }
 }
 
+// Site memory
+define( 'WP_MEMORY_LIMIT', getenv_docker('MEMORY_LIMIT', '2048M') );
+define( 'WP_MAX_MEMORY_LIMIT', getenv_docker('MAX_MEMORY_LIMIT', '2048M') );
+
 // Table prefix
 $table_prefix = getenv_docker('WORDPRESS_TABLE_PREFIX', 'wp_');
 
@@ -85,7 +89,6 @@ if ($oidcEnforcePrivacy !== '') {
 }
 
 // Resource Limits
-@ini_set( 'memory_limit', getenv_docker('MEMORY_LIMIT', '2048M') );
 @ini_set( 'max_execution_time', '300' );
 @ini_set( 'max_input_time', '300' );
 
