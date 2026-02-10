@@ -7,16 +7,16 @@
  *
  * @package   OpenID_Connect_Generic
  * @category  General
- * @author    Jonathan Daggerhart <jonathan@daggerhart.com>
+ * @author    Jonathan Daggerhart <jonathan@daggerhartlab.com>
  * @copyright 2015-2023 daggerhart
  * @license   http://www.gnu.org/licenses/gpl-2.0.txt GPL-2.0+
- * @link      https://github.com/daggerhart
+ * @link      https://github.com/oidc-wp
  *
  * @wordpress-plugin
  * Plugin Name:       Illios Digital LLC SSO
  * Plugin URI:        https://github.com/ryandis44/illios-wordpress-public
  * Description:       Authorize users using Keycloak and map roles to WordPress
- * Version:           3.10.0 | IDSSO v1.0
+ * Version:           3.10.3 | IDSSO v1.1
  * Requires at least: 5.0
  * Requires PHP:      7.4
  * Author:            daggerhart (Modified by Illios Digital LLC)
@@ -35,6 +35,7 @@ Notes
   Filters
   - openid-connect-generic-alter-request       - 3 args: request array, plugin settings, specific request op
   - openid-connect-generic-settings-fields     - modify the fields provided on the settings page
+  - openid-connect-generic-settings            - modify settings values early in plugin bootstrap.
   - openid-connect-generic-login-button-text   - modify the login button text
   - openid-connect-generic-cookie-redirect-url - modify the redirect url stored as a cookie
   - openid-connect-generic-user-login-test     - (bool) should the user be logged in based on their claim
@@ -44,6 +45,7 @@ Notes
   - openid-connect-generic-alter-user-data     - modify user data before a new user is created
   - openid-connect-modify-token-response-before-validation - modify the token response before validation
   - openid-connect-modify-id-token-claim-before-validation - modify the token claim before validation
+  - openid-connect-generic-new-state-value     - modify the user's state value before it us saved.
 
   Actions
   - openid-connect-generic-user-create                     - 2 args: fires when a new user is created by this plugin
@@ -91,7 +93,7 @@ class OpenID_Connect_Generic {
 	 *
 	 * @var string
 	 */
-	const VERSION = '3.10.0';
+	const VERSION = '3.10.3';
 
 	/**
 	 * Plugin settings.
@@ -144,6 +146,9 @@ class OpenID_Connect_Generic {
 	 */
 	public function init() {
 
+		// Allow altering the settings.
+		$this->settings = apply_filters( 'openid-connect-generic-settings', $this->settings );
+
 		$this->client = new OpenID_Connect_Generic_Client(
 			$this->settings->client_id,
 			$this->settings->client_secret,
@@ -163,7 +168,7 @@ class OpenID_Connect_Generic {
 			return;
 		}
 
-		OpenID_Connect_Generic_Login_Form::register( $this->settings, $this->client_wrapper );
+		OpenID_Connect_Generic_Login_Form::register( $this->settings, $this->client_wrapper, $this->client );
 
 		// Add a shortcode to get the auth URL.
 		add_shortcode( 'openid_connect_generic_auth_url', array( $this->client_wrapper, 'get_authentication_url' ) );

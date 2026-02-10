@@ -105,7 +105,7 @@ class OpenID_Connect_Generic_Settings_Page {
 	 */
 	public function admin_menu() {
 		add_options_page(
-			__( 'Illios Digital LLC — OpenID Client for Keycloak', 'daggerhart-openid-connect-generic' ),
+			__( 'Illios Digital LLC — OpenID Client for SSO', 'daggerhart-openid-connect-generic' ),
 			__( 'OpenID Connect Client', 'daggerhart-openid-connect-generic' ),
 			'manage_options',
 			$this->options_page_name,
