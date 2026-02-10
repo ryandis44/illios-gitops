@@ -241,6 +241,7 @@ class OpenID_Connect_Generic_Client_Wrapper {
 		);
 
 		$url = apply_filters( 'openid-connect-generic-auth-url', $url );
+		$url = esc_url_raw( $url );
 		$this->logger->log( $url, 'make_authentication_url' );
 		return $url;
 	}
@@ -256,26 +257,26 @@ class OpenID_Connect_Generic_Client_Wrapper {
 			return;
 		}
 		$user_id = wp_get_current_user()->ID;
-		$last_token_response = get_user_meta( $user_id, 'openid-connect-generic-last-token-response', true );
+		$last_token_response = get_user_option( 'openid-connect-generic-last-token-response', $user_id );
 
-		/*
-		 * Token expiration logic modified and customized for Illios Digital LLC
-		 */
-		if ( ! empty( $last_token_response['expires_in'] ) && (! empty( $last_token_response['time'] ) || 
-				! empty( $last_token_response['0'] )) ) {
+		if ( false === $last_token_response ) {
+			$last_token_response = get_user_meta(
+				$user_id,
+				'openid-connect-generic-last-token-response',
+				true
+			);
+		}
+
+		if ( ! empty( $last_token_response['expires_in'] ) && ! empty( $last_token_response['time'] ) ) {
 			/*
 			 * @var int $expiration_time
 			 */
-			$token_generation_time = isset( $last_token_response['time'] ) ? intval( $last_token_response['time'] ) : intval( $last_token_response[0] );
-			$expiration_time = $token_generation_time + intval( $last_token_response['expires_in'] );
-			if ( time() <= $expiration_time ) {
+			$expiration_time = intval( $last_token_response['time'] ) + intval( $last_token_response['expires_in'] );
+			if ( time() < $expiration_time ) {
 				// Access token is not expired so don't attempt to refresh.
 				return;
 			}
 		}
-		/*
-		 * end Illios Digital LLC modifications
-		 */
 
 		$manager = WP_Session_Tokens::get_instance( $user_id );
 		$token = wp_get_session_token();
