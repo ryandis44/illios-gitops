@@ -80,6 +80,25 @@ class OpenID_Connect_Generic_Settings_Page {
 	}
 
 	/**
+	 * Make a safe HTTP GET request with optional internal endpoint support.
+	 *
+	 * By default, uses wp_safe_remote_get() which blocks requests to internal/private
+	 * networks (SSRF protection). If allow_internal_idp is enabled, uses wp_remote_get()
+	 * to allow connections to localhost and private network identity providers.
+	 *
+	 * @param string $url  The URL to request.
+	 * @param array  $args Optional. Request arguments.
+	 *
+	 * @return array|WP_Error Response array or WP_Error on failure.
+	 */
+	private function http_get( $url, $args = array() ) {
+		if ( $this->settings->allow_internal_idp ) {
+			return wp_remote_get( $url, $args );
+		}
+		return wp_safe_remote_get( $url, $args );
+	}
+
+	/**
 	 * Hook the settings page into WordPress.
 	 *
 	 * @param OpenID_Connect_Generic_Option_Settings $settings A plugin settings object instance.
@@ -198,7 +217,14 @@ class OpenID_Connect_Generic_Settings_Page {
 				'disabled'    => defined( 'OIDC_LOGIN_TYPE' ),
 				'section'     => 'client_settings',
 			),
-			// 'client_id'         => array(
+			'login_button_text' => array(
+				'title'       => __( 'Login Button Text', 'daggerhart-openid-connect-generic' ),
+				'description' => __( 'Customize the text shown on the OpenID Connect login button. Leave empty to use the default text.', 'daggerhart-openid-connect-generic' ),
+				'example'     => 'Login with Single Sign-On',
+				'type'        => 'text',
+				'section'     => 'client_settings',
+			),
+			'client_id'         => array(
 			// 	'title'       => __( 'Client ID', 'daggerhart-openid-connect-generic' ),
 			// 	'description' => __( 'The ID this client will be recognized as when connecting the to Identity provider server.', 'daggerhart-openid-connect-generic' ),
 			// 	'example'     => 'my-wordpress-client-id',
