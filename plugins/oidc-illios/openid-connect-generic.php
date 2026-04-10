@@ -434,7 +434,7 @@ class OpenID_Connect_Generic {
 				'endpoint_token'       => defined( 'OIDC_ENDPOINT_TOKEN_URL' ) ? OIDC_ENDPOINT_TOKEN_URL : 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/token',
 				'endpoint_end_session' => defined( 'OIDC_ENDPOINT_LOGOUT_URL' ) ? OIDC_ENDPOINT_LOGOUT_URL : 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/logout',
 				'endpoint_jwks'        => defined( 'OIDC_ENDPOINT_JWKS_URL' ) ? OIDC_ENDPOINT_JWKS_URL : 'https://sso.illiosdigital.com/realms/illiosdigital/protocol/openid-connect/certs',
-				'issuer'               => defined( 'OIDC_ISSUER' ) ? OIDC_ISSUER : 'https://sso.illiosdigital.com/realms/illiosdigital',
+				'issuer'               => defined( 'OIDC_ISSUER' ) ? OIDC_ISSUER : 'https://sso.illiosdigital.com/realms/illiosdigital', // from 'develop' branch February 13, 2026 :: 3df89910e6a245c760bed62789036ac2b78de5fd :: was only difference between 'develop' and '3.11.3'
 				'jwks_cache_ttl'       => 3600,
 				'acr_values'           => defined( 'OIDC_ACR_VALUES' ) ? OIDC_ACR_VALUES : '',
 
