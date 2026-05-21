@@ -24,6 +24,13 @@ use Firebase\JWT\Key;
 class OpenID_Connect_Generic_JWT_Validator {
 
 	/**
+	 * Grace period for JWT time-based claims to allow minor clock skew.
+	 *
+	 * @var int
+	 */
+	const JWT_CLOCK_SKEW_LEEWAY = 60;
+
+	/**
 	 * The JWKS endpoint URL.
 	 *
 	 * @var string
@@ -330,12 +337,16 @@ class OpenID_Connect_Generic_JWT_Validator {
 		$jwks = $this->enrich_jwks_with_alg( $jwks, $id_token );
 
 		// Verify JWT signature and decode.
+		$previous_leeway = JWT::$leeway;
+
 		try {
+			JWT::$leeway = max( $previous_leeway, self::JWT_CLOCK_SKEW_LEEWAY );
+
 			// Parse JWKS into Key objects.
 			$keys = JWK::parseKeySet( $jwks );
 
 			// Decode and verify JWT signature.
-			// The JWT library will automatically validate exp, nbf, and signature.
+			// The JWT library will automatically validate exp, nbf, iat, and signature.
 			$decoded_jwt = JWT::decode( $id_token, $keys );
 
 		} catch ( Exception $e ) {
@@ -349,6 +360,8 @@ class OpenID_Connect_Generic_JWT_Validator {
 			);
 			$this->logger->log( $error, 'jwt-verification-failed' );
 			return $error;
+		} finally {
+			JWT::$leeway = $previous_leeway;
 		}
 
 		// Validate additional claims.
