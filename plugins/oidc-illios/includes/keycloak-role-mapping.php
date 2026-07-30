@@ -114,6 +114,29 @@ add_action('openid-connect-generic-update-user-using-current-claim', function($u
                                 $role_weight = 50;
                                 $user->set_role('ssocontractor');
                             }
+
+                        // --- Native (limited) WP roles: NOT god-roles, keep normal WP caps ---
+                        } else if ( $role == 'editor' ) {
+                            if ( $role_weight < 40 ) {
+                                $role_weight = 40;
+                                $user->set_role('editor');
+                            }
+                        } else if ( $role == 'author' ) {
+                            if ( $role_weight < 30 ) {
+                                $role_weight = 30;
+                                $user->set_role('author');
+                            }
+                        } else if ( $role == 'contributor' ) {
+                            if ( $role_weight < 20 ) {
+                                $role_weight = 20;
+                                $user->set_role('contributor');
+                            }
+                        } else if ( $role == 'subscriber' ) {
+                            if ( $role_weight < 10 ) {
+                                $role_weight = 10;
+                                $user->set_role('subscriber');
+                            }
+
                         } else {
                             $user->set_role('');
                         }
