@@ -35,15 +35,10 @@ class Illios_Cache_Admin_Settings {
     }
 
     private function get_options_with_defaults() {
-        $defaults = array(
-            'cloudflare_enabled' => true,
-            'varnish_enabled' => true,
-        );
-        
-        $options = get_option('illios_cache_settings', array());
-        
-    return wp_parse_args($options, $defaults);
-}
+        // Shared with the runtime so the settings screen and the purge code
+        // can never disagree about what is enabled.
+        return illios_cache_get_settings();
+    }
 
     public function enqueue_admin_assets($hook) {
         if ('settings_page_illios-cache-admin' !== $hook) {
@@ -277,14 +272,31 @@ class Illios_Cache_Admin_Settings {
     }
 
     public function sanitize($input) {
-        $new_input = array();
+        // Start from what is already stored. Several settings (API token, zone
+        // ID, Varnish servers and timeout) have no field on this screen, so
+        // building the array from scratch would wipe them on every save.
+        $new_input = get_option('illios_cache_settings', array());
 
-        if (isset($input['global_dev_mode_enabled'])) {
-            $new_input['global_dev_mode_enabled'] = (bool) $input['global_dev_mode_enabled'];
+        if (!is_array($new_input)) {
+            $new_input = array();
         }
 
-        $new_input['cloudflare_enabled'] = isset($input['cloudflare_enabled']) ? (bool) $input['cloudflare_enabled'] : false;
-        $new_input['varnish_enabled'] = isset($input['varnish_enabled']) ? (bool) $input['varnish_enabled'] : false;
+        // Checkboxes that this screen renders. An unchecked box is absent from
+        // $input, so each one must be written as an explicit false or it could
+        // never be turned off.
+        $checkboxes = array(
+            'global_dev_mode_enabled',
+            'cloudflare_enabled',
+            'cloudflare_apo_enabled',
+            'cloudflare_apo_cache_by_device_type',
+            'varnish_enabled',
+            'purge_on_post_save',
+            'purge_on_comment',
+        );
+
+        foreach ($checkboxes as $checkbox) {
+            $new_input[$checkbox] = !empty($input[$checkbox]);
+        }
 
         if (isset($input['cloudflare_api_token'])) {
             $new_input['cloudflare_api_token'] = sanitize_text_field($input['cloudflare_api_token']);
@@ -294,37 +306,13 @@ class Illios_Cache_Admin_Settings {
             $new_input['cloudflare_zone_id'] = sanitize_text_field($input['cloudflare_zone_id']);
         }
 
-        // if (isset($input['cloudflare_enabled'])) {
-        //     $new_input['cloudflare_enabled'] = (bool) $input['cloudflare_enabled'];
-        // }
-
-        if (isset($input['cloudflare_apo_enabled'])) {
-            $new_input['cloudflare_apo_enabled'] = (bool) $input['cloudflare_apo_enabled'];
-        }
-
-        if (isset($input['cloudflare_apo_cache_by_device_type'])) {
-            $new_input['cloudflare_apo_cache_by_device_type'] = (bool) $input['cloudflare_apo_cache_by_device_type'];
-        }
-
         if (isset($input['varnish_servers'])) {
             $new_input['varnish_servers'] = sanitize_textarea_field($input['varnish_servers']);
         }
 
-        // if (isset($input['varnish_enabled'])) {
-        //     $new_input['varnish_enabled'] = (bool) $input['varnish_enabled'];
-        // }
-
         if (isset($input['varnish_timeout'])) {
             $timeout = (int) $input['varnish_timeout'];
             $new_input['varnish_timeout'] = ($timeout > 0 && $timeout <= 60) ? $timeout : 30;
-        }
-
-        if (isset($input['purge_on_post_save'])) {
-            $new_input['purge_on_post_save'] = (bool) $input['purge_on_post_save'];
-        }
-
-        if (isset($input['purge_on_comment'])) {
-            $new_input['purge_on_comment'] = (bool) $input['purge_on_comment'];
         }
 
         return $new_input;

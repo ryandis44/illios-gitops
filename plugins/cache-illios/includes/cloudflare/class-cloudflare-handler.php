@@ -21,7 +21,7 @@ class Illios_Cache_Cloudflare_Handler {
     private $api_base_url = 'https://api.cloudflare.com/client/v4/';
 
     public function __construct() {
-        $options = get_option('illios_cache_settings', array());
+        $options = illios_cache_get_settings();
         $this->api_token = getenv('CLOUDFLARE_API_TOKEN') ?: (isset($options['cloudflare_api_token']) ? $options['cloudflare_api_token'] : '');
         $this->zone_id = getenv('CLOUDFLARE_ZONE_ID') ?: (isset($options['cloudflare_zone_id']) ? $options['cloudflare_zone_id'] : '');
         $this->enabled = isset($options['cloudflare_enabled']) ? $options['cloudflare_enabled'] : false;
@@ -369,6 +369,11 @@ class Illios_Cache_Cloudflare_Handler {
                 $urls[] = $archive_url;
             }
         }
+
+        // Hand-built listing pages. Post types registered with has_archive =>
+        // false have no archive link, so the pages that actually list them are
+        // invisible to the check above.
+        $urls = array_merge($urls, illios_cache_get_associated_urls($post_id));
 
         // Categories and tags
         if ($post_type === 'post') {

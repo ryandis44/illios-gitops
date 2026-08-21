@@ -35,6 +35,127 @@ define('ILLIOS_CACHE_VERSION', '0.1.0');
 define('ILLIOS_CACHE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('ILLIOS_CACHE_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+/**
+ * Default plugin settings.
+ *
+ * Applied everywhere the settings are read, not just on the admin screen, so
+ * the settings page and the runtime can never disagree about what is enabled.
+ */
+function illios_cache_default_settings() {
+    return array(
+        'cloudflare_enabled' => true,
+        'varnish_enabled'    => true,
+        'purge_on_post_save' => true,
+        'purge_on_comment'   => false,
+    );
+}
+
+/**
+ * Read the plugin settings with defaults applied.
+ */
+function illios_cache_get_settings() {
+    $options = get_option('illios_cache_settings', array());
+
+    if (!is_array($options)) {
+        $options = array();
+    }
+
+    return wp_parse_args($options, illios_cache_default_settings());
+}
+
+/**
+ * Pages that list a post type but that WordPress has no link to.
+ *
+ * A post type registered with has_archive => false has no archive link, so
+ * get_post_type_archive_link() returns false and the hand-built pages that
+ * actually list those posts are never purged. Map them explicitly.
+ */
+function illios_cache_associated_paths() {
+    $paths = array(
+        'episode'  => array('/', '/episodes/', '/all-episodes/'),
+        'research' => array('/', '/research-hub/', '/all-research/'),
+    );
+
+    return apply_filters('illios_cache_associated_paths', $paths);
+}
+
+/**
+ * Extra URLs that should be purged alongside a given post.
+ */
+function illios_cache_get_associated_urls($post_id) {
+    $post_type = get_post_type($post_id);
+    $urls      = array();
+
+    if (!$post_type) {
+        return $urls;
+    }
+
+    $paths = illios_cache_associated_paths();
+
+    if (!empty($paths[$post_type])) {
+        foreach ($paths[$post_type] as $path) {
+            $url = home_url($path);
+            // Cloudflare purge-by-URL is an exact match, so cover both forms.
+            $urls[] = trailingslashit($url);
+            $urls[] = untrailingslashit($url);
+        }
+    }
+
+    $urls = apply_filters('illios_cache_associated_urls', $urls, $post_id, $post_type);
+
+    return array_values(array_unique(array_filter($urls)));
+}
+
+/**
+ * Flatten a purge result into a list of readable error strings.
+ *
+ * The handlers return nested arrays (one entry per URL, per server, or per
+ * API request chunk) whose *elements* may be WP_Error objects. is_wp_error()
+ * on the outer array is always false, which is why failed purges used to be
+ * reported as successes.
+ */
+function illios_cache_collect_errors($result, $context = '') {
+    $prefix = ('' !== $context) ? $context . ': ' : '';
+
+    if (is_wp_error($result)) {
+        return array($prefix . $result->get_error_message());
+    }
+
+    if (!is_array($result)) {
+        return array();
+    }
+
+    // Cloudflare's API envelope, and the Varnish handler's per-server result.
+    if (array_key_exists('success', $result)) {
+        if ($result['success']) {
+            return array();
+        }
+
+        $errors = array();
+
+        if (!empty($result['errors']) && is_array($result['errors'])) {
+            foreach ($result['errors'] as $error) {
+                $errors[] = $prefix . (isset($error['message']) ? $error['message'] : 'unknown error');
+            }
+        }
+
+        if (empty($errors)) {
+            $errors[] = $prefix . 'the request was not successful';
+        }
+
+        return $errors;
+    }
+
+    $errors = array();
+
+    foreach ($result as $key => $item) {
+        $child  = $context . (is_string($key) ? ' [' . $key . ']' : '');
+        $errors = array_merge($errors, illios_cache_collect_errors($item, $child));
+    }
+
+    return $errors;
+}
+
 // Main plugin class
 class Illios_Cache_Plugin {
     
@@ -99,34 +220,32 @@ class Illios_Cache_Plugin {
             return;
         }
 
-        $options = get_option('illios_cache_settings', array());
-        
-        // Check if global dev mode is enabled - if so, always purge
-        if (isset($options['global_dev_mode_enabled']) && $options['global_dev_mode_enabled']) {
-            $this->purge_post_related_caches($post_id);
+        // An auto-draft has never been public, so there is nothing to purge.
+        if ('auto-draft' === get_post_status($post_id)) {
             return;
         }
 
-        // Otherwise check individual setting
-        if (!isset($options['purge_on_post_save']) || !$options['purge_on_post_save']) {
+        $options = illios_cache_get_settings();
+
+        // Global dev mode always purges; otherwise honour the individual setting.
+        if (empty($options['global_dev_mode_enabled']) && empty($options['purge_on_post_save'])) {
             return;
         }
 
         $this->purge_post_related_caches($post_id);
     }
-    
+
     public function purge_cache_on_delete($post_id) {
-        $options = get_option('illios_cache_settings', array());
-        
+        $options = illios_cache_get_settings();
+
         // Always purge on delete if global dev mode or if configured
-        if ((isset($options['global_dev_mode_enabled']) && $options['global_dev_mode_enabled']) ||
-            (isset($options['purge_on_post_save']) && $options['purge_on_post_save'])) {
+        if (!empty($options['global_dev_mode_enabled']) || !empty($options['purge_on_post_save'])) {
             $this->purge_post_related_caches($post_id);
         }
     }
 
     public function purge_cache_on_comment($comment_id) {
-        $options = get_option('illios_cache_settings', array());
+        $options = illios_cache_get_settings();
         
         // Check if global dev mode is enabled - if so, always purge
         if (isset($options['global_dev_mode_enabled']) && $options['global_dev_mode_enabled']) {
@@ -149,7 +268,7 @@ class Illios_Cache_Plugin {
     }
 
     public function purge_cache_on_comment_status($comment_id, $status = null) {
-        $options = get_option('illios_cache_settings', array());
+        $options = illios_cache_get_settings();
         
         // Check if global dev mode is enabled - if so, always purge
         if (isset($options['global_dev_mode_enabled']) && $options['global_dev_mode_enabled']) {
@@ -177,42 +296,71 @@ class Illios_Cache_Plugin {
     private function purge_post_related_caches($post_id) {
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
         $varnish_handler = new Illios_Cache_Varnish_Handler();
+        $errors = array();
 
         // Purge Cloudflare
         if ($cf_handler->is_enabled()) {
-            $cf_result = $cf_handler->purge_post($post_id);
-            if (is_wp_error($cf_result)) {
-                error_log('Cloudflare post purge failed: ' . $cf_result->get_error_message());
-            }
+            $errors = array_merge(
+                $errors,
+                illios_cache_collect_errors($cf_handler->purge_post($post_id), 'Cloudflare')
+            );
         }
 
-        // Purge Varnish  
+        // Purge Varnish
         if ($varnish_handler->is_enabled()) {
-            $varnish_result = $varnish_handler->purge_post($post_id);
-            if (is_wp_error($varnish_result)) {
-                error_log('Varnish post purge failed: ' . $varnish_result->get_error_message());
-            }
+            $errors = array_merge(
+                $errors,
+                illios_cache_collect_errors($varnish_handler->purge_post($post_id), 'Varnish')
+            );
         }
+
+        foreach ($errors as $error) {
+            error_log('Illios Cache: purge for post ' . $post_id . ' failed - ' . $error);
+        }
+
+        return $errors;
     }
-    
-    private function purge_all_caches() {
+
+    /**
+     * Purge every configured cache.
+     *
+     * Returns a list of error strings, empty on full success. Public because
+     * it is also used directly as a switch_theme callback.
+     */
+    public function purge_all_caches() {
+        $errors = array();
+        $attempted = 0;
+
         // Purge Cloudflare
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
         if ($cf_handler->is_enabled()) {
-            $cf_result = $cf_handler->purge_all();
-            if (is_wp_error($cf_result)) {
-                error_log('Cloudflare purge all failed: ' . $cf_result->get_error_message());
-            }
+            $attempted++;
+            $errors = array_merge(
+                $errors,
+                illios_cache_collect_errors($cf_handler->purge_all(), 'Cloudflare')
+            );
         }
-        
+
         // Purge Varnish
         $varnish_handler = new Illios_Cache_Varnish_Handler();
         if ($varnish_handler->is_enabled()) {
-            $varnish_result = $varnish_handler->purge_all();
-            if (is_wp_error($varnish_result)) {
-                error_log('Varnish purge all failed: ' . $varnish_result->get_error_message());
-            }
+            $attempted++;
+            $errors = array_merge(
+                $errors,
+                illios_cache_collect_errors($varnish_handler->purge_all(), 'Varnish')
+            );
         }
+
+        // Nothing ran at all, so reporting success would be a lie.
+        if (0 === $attempted) {
+            $errors[] = 'No cache backend is enabled or configured, so nothing was purged';
+        }
+
+        foreach ($errors as $error) {
+            error_log('Illios Cache: purge all failed - ' . $error);
+        }
+
+        return $errors;
     }
 
     /**
@@ -240,17 +388,17 @@ class Illios_Cache_Plugin {
 
     public function handle_manual_purge() {
         // Verify nonce
-        if (!wp_verify_nonce($_POST['nonce'], 'illios_cache_purge')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'illios_cache_purge')) {
             wp_send_json_error('Security check failed');
         }
-        
+
         // Check user permissions
         if (!current_user_can('manage_options')) {
             wp_send_json_error('Insufficient permissions');
         }
-        
-        $type = sanitize_text_field($_POST['type']);
-        
+
+        $type = isset($_POST['type']) ? sanitize_text_field(wp_unslash($_POST['type'])) : '';
+
         try {
             switch ($type) {
                 case 'cloudflare':
@@ -258,29 +406,32 @@ class Illios_Cache_Plugin {
                     if (!$cf_handler->is_enabled()) {
                         wp_send_json_error('Cloudflare is not enabled or configured');
                     }
-                    
-                    $result = $cf_handler->purge_all();
-                    if (is_wp_error($result)) {
-                        wp_send_json_error($result->get_error_message());
+
+                    $errors = illios_cache_collect_errors($cf_handler->purge_all(), 'Cloudflare');
+                    if (!empty($errors)) {
+                        wp_send_json_error(implode(' | ', $errors));
                     }
                     break;
-                    
+
                 case 'varnish':
                     $varnish_handler = new Illios_Cache_Varnish_Handler();
                     if (!$varnish_handler->is_enabled()) {
                         wp_send_json_error('Varnish is not enabled or configured');
                     }
-                    
-                    $result = $varnish_handler->purge_all();
-                    if (is_wp_error($result)) {
-                        wp_send_json_error($result->get_error_message());
+
+                    $errors = illios_cache_collect_errors($varnish_handler->purge_all(), 'Varnish');
+                    if (!empty($errors)) {
+                        wp_send_json_error(implode(' | ', $errors));
                     }
                     break;
-                    
+
                 case 'all':
-                    $this->purge_all_caches();
+                    $errors = $this->purge_all_caches();
+                    if (!empty($errors)) {
+                        wp_send_json_error(implode(' | ', $errors));
+                    }
                     break;
-                    
+
                 default:
                     wp_send_json_error('Invalid purge type');
             }
@@ -363,41 +514,51 @@ class Illios_Cache_Plugin {
             wp_die('Insufficient permissions');
         }
 
-        $action = $_GET['action'];
-        $nonce_action = str_replace('illios_cache_', 'illios_cache_', $action);
-        
-        if (!wp_verify_nonce($_GET['_wpnonce'], $nonce_action)) {
+        $action = isset($_GET['action']) ? sanitize_key(wp_unslash($_GET['action'])) : '';
+        $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+
+        $allowed_actions = array(
+            'illios_cache_purge_all',
+            'illios_cache_purge_cf',
+            'illios_cache_purge_varnish',
+        );
+
+        // The nonce action matches the request action for all three buttons.
+        if (!in_array($action, $allowed_actions, true) || !wp_verify_nonce($nonce, $action)) {
             wp_die('Security check failed');
         }
 
         $redirect_url = wp_get_referer() ? wp_get_referer() : home_url();
+        $errors = array();
 
         try {
             switch ($action) {
                 case 'illios_cache_purge_all':
-                    $this->purge_all_caches();
-                    $redirect_url = add_query_arg('cache_purged', 'all', $redirect_url);
+                    $errors = $this->purge_all_caches();
+                    $redirect_url = empty($errors)
+                        ? add_query_arg('cache_purged', 'all', $redirect_url)
+                        : add_query_arg('cache_error', 'all', $redirect_url);
                     break;
-                    
+
                 case 'illios_cache_purge_cf':
                     $cf_handler = new Illios_Cache_Cloudflare_Handler();
-                    $result = $cf_handler->purge_all();
-                    if (is_wp_error($result)) {
-                        $redirect_url = add_query_arg('cache_error', 'cf', $redirect_url);
-                    } else {
-                        $redirect_url = add_query_arg('cache_purged', 'cloudflare', $redirect_url);
-                    }
+                    $errors = illios_cache_collect_errors($cf_handler->purge_all(), 'Cloudflare');
+                    $redirect_url = empty($errors)
+                        ? add_query_arg('cache_purged', 'cloudflare', $redirect_url)
+                        : add_query_arg('cache_error', 'cf', $redirect_url);
                     break;
-                    
+
                 case 'illios_cache_purge_varnish':
                     $varnish_handler = new Illios_Cache_Varnish_Handler();
-                    $result = $varnish_handler->purge_all();
-                    if (is_wp_error($result)) {
-                        $redirect_url = add_query_arg('cache_error', 'varnish', $redirect_url);
-                    } else {
-                        $redirect_url = add_query_arg('cache_purged', 'varnish', $redirect_url);
-                    }
+                    $errors = illios_cache_collect_errors($varnish_handler->purge_all(), 'Varnish');
+                    $redirect_url = empty($errors)
+                        ? add_query_arg('cache_purged', 'varnish', $redirect_url)
+                        : add_query_arg('cache_error', 'varnish', $redirect_url);
                     break;
+            }
+
+            foreach ($errors as $error) {
+                error_log('Illios Cache: admin bar purge failed - ' . $error);
             }
         } catch (Exception $e) {
             $redirect_url = add_query_arg('cache_error', 'general', $redirect_url);
@@ -437,6 +598,9 @@ class Illios_Cache_Plugin {
             $message = '';
             
             switch ($type) {
+                case 'all':
+                    $message = 'One or more caches could not be purged. Check your settings and the error log.';
+                    break;
                 case 'cf':
                     $message = 'Error purging Cloudflare cache. Check your settings.';
                     break;

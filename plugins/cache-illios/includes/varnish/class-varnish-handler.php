@@ -19,7 +19,7 @@ class Illios_Cache_Varnish_Handler {
     private $purge_urls = array();
 
     public function __construct() {
-        $options = get_option('illios_cache_settings', array());
+        $options = illios_cache_get_settings();
         $this->enabled = isset($options['varnish_enabled']) ? $options['varnish_enabled'] : false;
         $this->timeout = isset($options['varnish_timeout']) ? $options['varnish_timeout'] : 30;
         
@@ -33,10 +33,18 @@ class Illios_Cache_Varnish_Handler {
      */
     private function parse_servers($server_string) {
         $servers = array();
-        
+
         if (empty($server_string)) {
-            // Default to localhost if no servers specified
-            return array('wordpress:80');
+            // No server configured. Prefer the Varnish HTTP Purge convention
+            // (VHP_VARNISH_IP in wp-config), then fall back to the site's own
+            // host rather than a hardcoded container name.
+            if (defined('VHP_VARNISH_IP') && VHP_VARNISH_IP) {
+                return array(str_replace(array('http://', 'https://'), '', VHP_VARNISH_IP));
+            }
+
+            $host = wp_parse_url(home_url(), PHP_URL_HOST);
+
+            return $host ? array($host) : array();
         }
 
         $lines = explode("\n", $server_string);
@@ -317,6 +325,11 @@ class Illios_Cache_Varnish_Handler {
             $listofurls[] = get_post_type_archive_link(get_post_type($post_id));
             $listofurls[] = get_post_type_archive_feed_link(get_post_type($post_id));
         }
+
+        // Hand-built listing pages. Post types registered with has_archive =>
+        // false have no archive link, so the pages that actually list them are
+        // invisible to the check above.
+        $listofurls = array_merge($listofurls, illios_cache_get_associated_urls($post_id));
 
         // Home page and posts page
         $listofurls[] = get_rest_url();
