@@ -16,7 +16,6 @@ class Illios_Cache_Varnish_Handler {
     private $servers;
     private $enabled;
     private $timeout = 30;
-    private $purge_urls = array();
 
     public function __construct() {
         $options = illios_cache_get_settings();
@@ -62,13 +61,6 @@ class Illios_Cache_Varnish_Handler {
         }
 
         return $servers;
-    }
-
-    /**
-     * Get the list of configured servers
-     */
-    public function get_servers() {
-        return $this->servers;
     }
 
     /**
@@ -362,74 +354,4 @@ class Illios_Cache_Varnish_Handler {
         return array();
     }
 
-    /**
-     * Test connection to Varnish servers
-     */
-    public function test_connection() {
-        
-        if (!$this->is_enabled()) {
-            return new WP_Error('varnish_disabled', 'Varnish is not enabled or configured');
-        }
-        
-        $results = array();
-        
-        foreach ($this->servers as $server) {
-            // Parse server to get host and port
-            $server_parts = parse_url('http://' . $server);
-            $host = $server_parts['host'];
-            $port = isset($server_parts['port']) ? $server_parts['port'] : 80;
-            
-            $results[$server] = $this->test_varnish_purge($host, $port);
-        }
-        
-        return $results;
-    }
-
-    private function test_varnish_purge($host, $port) {
-        $url = "http://{$host}:{$port}/";
-        
-        // Test PURGE method - most reliable way to detect Varnish
-        $response = wp_remote_request($url, array(
-            'method' => 'PURGE',
-            'timeout' => $this->timeout,
-            'headers' => array(
-                'Host' => parse_url(home_url(), PHP_URL_HOST)
-            )
-        ));
-        
-        if (is_wp_error($response)) {
-            return array(
-                'success' => false,
-                'message' => 'PURGE test failed: ' . $response->get_error_message()
-            );
-        }
-        
-        $status = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
-        
-        
-        // Varnish typically returns 200 (success) or 405 (not allowed in ACL) for PURGE
-        if (in_array($status, array(200, 405))) {
-            // Look for Varnish-specific PURGE responses
-            if (stripos($body, 'PURGE') !== false || stripos($body, 'varnish') !== false) {
-                return array(
-                    'success' => true,
-                    'message' => 'Varnish detected via PURGE method response'
-                );
-            }
-            
-            // Even without specific text, proper PURGE handling suggests Varnish
-            if ($status === 200 || ($status === 405 && stripos($body, 'not allowed') !== false)) {
-                return array(
-                    'success' => true,
-                    'message' => "PURGE method supported (status: {$status}) - likely Varnish"
-                );
-            }
-        }
-        
-        return array(
-            'success' => false,
-            'message' => "PURGE not supported (status: {$status}) - no Varnish detected"
-        );
-    }
 }

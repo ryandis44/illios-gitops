@@ -1,8 +1,8 @@
 <?php
 /**
- * Illios Digital LLC Cache - Enhanced Version
+ * Illios Digital LLC Cache
  *
- * A WordPress plugin that combines Cloudflare (with APO support) and Varnish cache purging capabilities.
+ * A WordPress plugin that combines Cloudflare and Varnish cache purging capabilities.
  *
  * @package   Illios_Cache
  * @category  Performance
@@ -13,7 +13,7 @@
  * @wordpress-plugin
  * Plugin Name:       Illios Digital LLC Cache
  * Plugin URI:        https://github.com/your-repo/cache-illios
- * Description:       Combined Cloudflare (with APO support) and Varnish cache management for optimal performance
+ * Description:       Combined Cloudflare and Varnish cache management for optimal performance
  * Version:           0.1.0
  * Requires at least: 5.0
  * Requires PHP:      7.4
@@ -47,7 +47,40 @@ function illios_cache_default_settings() {
         'varnish_enabled'    => true,
         'purge_on_post_save' => true,
         'purge_on_comment'   => false,
+        // Varnish purges are blocking and run one request per URL per server,
+        // inside the save request. Keep the per-request wait short so an
+        // unreachable server cannot stall publishing.
+        'varnish_timeout'    => 5,
     );
+}
+
+/**
+ * Should saving this post trigger a purge?
+ *
+ * save_post fires for every post type, including internal ones like
+ * customize_changeset, oembed_cache and revisions. Purging for those means a
+ * pointless round trip to Cloudflare and Varnish on routine admin activity.
+ */
+function illios_cache_should_purge_post($post_id) {
+    $should = true;
+
+    if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+        $should = false;
+    } elseif ('auto-draft' === get_post_status($post_id)) {
+        // Never been public, so nothing can be cached for it yet.
+        $should = false;
+    } else {
+        $post_type_object = get_post_type_object(get_post_type($post_id));
+
+        // Only skip post types we can positively identify as non-public.
+        if ($post_type_object
+            && empty($post_type_object->public)
+            && empty($post_type_object->publicly_queryable)) {
+            $should = false;
+        }
+    }
+
+    return apply_filters('illios_cache_should_purge_post', $should, $post_id);
 }
 
 /**
@@ -187,8 +220,6 @@ class Illios_Cache_Plugin {
         
         // Theme and plugin change hooks
         add_action('switch_theme', array($this, 'purge_all_caches'));
-        // add_action('activated_plugin', array($this, 'purge_all_caches'));
-        // add_action('deactivated_plugin', array($this, 'purge_all_caches'));
         
         // Initialize admin settings
         if (is_admin()) {
@@ -196,12 +227,9 @@ class Illios_Cache_Plugin {
             add_action('wp_ajax_illios_cache_purge', array($this, 'handle_manual_purge'));
         }
 
-        // Add APO cache bypass for logged-in users
-        add_action('init', array($this, 'add_apo_bypass_headers'));
-        
-        // Add Cloudflare headers for APO detection
-        add_action('wp_head', array($this, 'add_apo_detection_meta'), 1);
-    }
+        // Never let an edge cache store a logged-in user's response
+        add_action('init', array($this, 'add_logged_in_bypass_headers'));
+            }
     
     private function load_dependencies() {
         require_once ILLIOS_CACHE_PLUGIN_DIR . 'includes/cloudflare/class-cloudflare-handler.php';
@@ -215,13 +243,8 @@ class Illios_Cache_Plugin {
     }
     
     public function purge_cache_on_save($post_id) {
-        // Skip for autosaves and revisions
-        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
-            return;
-        }
-
-        // An auto-draft has never been public, so there is nothing to purge.
-        if ('auto-draft' === get_post_status($post_id)) {
+        // Skips autosaves, revisions, auto-drafts and non-public post types.
+        if (!illios_cache_should_purge_post($post_id)) {
             return;
         }
 
@@ -294,6 +317,16 @@ class Illios_Cache_Plugin {
      * Purge caches related to a specific post
      */
     private function purge_post_related_caches($post_id) {
+        // save_post can fire more than once for the same post in a single
+        // request. Purging is a blocking network round trip, so do it once.
+        static $already_purged = array();
+
+        if (isset($already_purged[$post_id])) {
+            return array();
+        }
+
+        $already_purged[$post_id] = true;
+
         $cf_handler = new Illios_Cache_Cloudflare_Handler();
         $varnish_handler = new Illios_Cache_Varnish_Handler();
         $errors = array();
@@ -364,25 +397,14 @@ class Illios_Cache_Plugin {
     }
 
     /**
-     * Add headers to bypass APO cache for logged-in users
+     * Add headers to bypass edge caching for logged-in users
      */
-    public function add_apo_bypass_headers() {
+    public function add_logged_in_bypass_headers() {
         if (is_user_logged_in()) {
-            // Standard WordPress bypass headers for APO
             if (!headers_sent()) {
                 header('Cache-Control: no-cache, must-revalidate, max-age=0');
                 header('Pragma: no-cache');
             }
-        }
-    }
-
-    /**
-     * Add meta tag for APO detection
-     */
-    public function add_apo_detection_meta() {
-        $cf_handler = new Illios_Cache_Cloudflare_Handler();
-        if ($cf_handler->is_apo_enabled()) {
-            echo '<meta name="cf-2fa-verify" content="' . home_url() . '">' . "\n";
         }
     }
 
@@ -443,33 +465,6 @@ class Illios_Cache_Plugin {
         }
     }
 
-    /**
-     * Get plugin status information
-     */
-    public function get_status() {
-        $cf_handler = new Illios_Cache_Cloudflare_Handler();
-        $varnish_handler = new Illios_Cache_Varnish_Handler();
-        
-        $status = array(
-            'cloudflare' => array(
-                'enabled' => $cf_handler->is_enabled(),
-                'apo_enabled' => $cf_handler->is_apo_enabled(),
-                'credentials_valid' => false
-            ),
-            'varnish' => array(
-                'enabled' => $varnish_handler->is_enabled(),
-                'servers' => count($varnish_handler->get_servers())
-            )
-        );
-
-        // Test Cloudflare credentials if enabled
-        if ($cf_handler->is_enabled()) {
-            $test = $cf_handler->verify_credentials();
-            $status['cloudflare']['credentials_valid'] = !is_wp_error($test);
-        }
-
-        return $status;
-    }
 /**
      * Add admin bar menu for quick actions
      */

@@ -1,7 +1,6 @@
 <?php
 /**
- * Enhanced Cloudflare Handler Class for Illios Cache Plugin
- * Now includes APO support and advanced features
+ * Cloudflare Handler Class for Illios Cache Plugin
  *
  * @package Illios_Cache
  */
@@ -16,8 +15,6 @@ class Illios_Cache_Cloudflare_Handler {
     private $api_token;
     private $zone_id;
     private $enabled;
-    private $apo_enabled = false;
-    private $apo_cache_by_device_type = false;
     private $api_base_url = 'https://api.cloudflare.com/client/v4/';
 
     public function __construct() {
@@ -25,8 +22,6 @@ class Illios_Cache_Cloudflare_Handler {
         $this->api_token = getenv('CLOUDFLARE_API_TOKEN') ?: (isset($options['cloudflare_api_token']) ? $options['cloudflare_api_token'] : '');
         $this->zone_id = getenv('CLOUDFLARE_ZONE_ID') ?: (isset($options['cloudflare_zone_id']) ? $options['cloudflare_zone_id'] : '');
         $this->enabled = isset($options['cloudflare_enabled']) ? $options['cloudflare_enabled'] : false;
-        $this->apo_enabled = isset($options['cloudflare_apo_enabled']) ? $options['cloudflare_apo_enabled'] : false;
-        $this->apo_cache_by_device_type = isset($options['cloudflare_apo_cache_by_device_type']) ? $options['cloudflare_apo_cache_by_device_type'] : false;
     }
 
     /**
@@ -34,101 +29,6 @@ class Illios_Cache_Cloudflare_Handler {
      */
     public function is_enabled() {
         return $this->enabled && !empty($this->api_token) && !empty($this->zone_id);
-    }
-
-    /**
-     * Check if APO is enabled
-     */
-    public function is_apo_enabled() {
-        return $this->apo_enabled && $this->is_enabled();
-    }
-
-    /**
-     * Get APO status from Cloudflare
-     */
-    public function get_apo_status() {
-        if (!$this->is_enabled()) {
-            return new WP_Error('cloudflare_disabled', 'Cloudflare is not enabled or configured');
-        }
-
-        $endpoint = "zones/{$this->zone_id}/settings/automatic_platform_optimization";
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        return $response;
-    }
-
-    /**
-     * Enable/Disable APO
-     */
-    public function set_apo_status($enabled = true, $cache_by_device_type = false) {
-        if (!$this->is_enabled()) {
-            return new WP_Error('cloudflare_disabled', 'Cloudflare is not enabled or configured');
-        }
-
-        $endpoint = "zones/{$this->zone_id}/settings/automatic_platform_optimization";
-        $hostname = parse_url(home_url(), PHP_URL_HOST);
-
-
-        $body = json_encode(array(
-            'value' => array(
-                'enabled' => $enabled,
-                'cf' => true, 
-                'wordpress' => true, 
-                'wp_plugin' => true,  
-                'hostnames' => array($hostname),
-                'cache_by_device_type' => $cache_by_device_type
-            )
-        ));
-
-        $response = $this->make_api_request($endpoint, 'PATCH', $body);
-
-        if (is_wp_error($response)) {
-            error_log('Cloudflare APO toggle failed: ' . $response->get_error_message());
-            return $response;
-        }
-
-        if (!isset($response['success']) || !$response['success']) {
-            $message = 'Failed to update APO.';
-            if (!empty($response['errors'][0]['message'])) {
-                $message = $response['errors'][0]['message'];
-            }
-            error_log('illios: set_apo_status error: ' . $message);
-            return new WP_Error('cloudflare_apo_failed', $message);
-        }
-
-        // persist settings locally
-        $options = get_option('illios_cache_settings', array());
-        $options['cloudflare_apo_enabled'] = $enabled;
-        $options['cloudflare_apo_cache_by_device_type'] = $cache_by_device_type;
-        update_option('illios_cache_settings', $options);
-
-        $this->apo_enabled = $enabled;
-        $this->apo_cache_by_device_type = $cache_by_device_type;
-
-        return $response;
-    }
-
-    /**
-     * Get development mode status
-     */
-    public function get_development_mode() {
-        if (!$this->is_enabled()) {
-            return new WP_Error('cloudflare_disabled', 'Cloudflare is not enabled or configured');
-        }
-
-        $endpoint = "zones/{$this->zone_id}/settings/development_mode";
-        
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        return $response;
     }
 
     /**
@@ -149,85 +49,6 @@ class Illios_Cache_Cloudflare_Handler {
         }
 
         return $response;
-    }
-
-    /**
-     * Apply recommended WordPress settings
-     */
-    public function apply_wordpress_settings() {
-        if (!$this->is_enabled()) {
-            return new WP_Error('cloudflare_disabled', 'Cloudflare is not enabled or configured');
-        }
-
-        $results = array();
-        
-        // Recommended WordPress settings based on official plugin
-        $settings = array(
-            // Always Online
-            'always_online' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/always_online",
-                'value' => 'on'
-            ),
-            // Security Level
-            'security_level' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/security_level", 
-                'value' => 'medium'
-            ),
-            // SSL Mode - Full (strict) for better security
-            'ssl' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/ssl",
-                'value' => 'full'
-            ),
-            // Browser Cache TTL
-            'browser_cache_ttl' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/browser_cache_ttl",
-                'value' => 14400 // 4 hours
-            ),
-            // Minification
-            'minify' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/minify",
-                'value' => array('css' => 'on', 'html' => 'on', 'js' => 'on')
-            ),
-            // Rocket Loader - off by default for WordPress compatibility
-            'rocket_loader' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/rocket_loader", 
-                'value' => 'off'
-            ),
-            // Auto-HTTPS Rewrites
-            'automatic_https_rewrites' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/automatic_https_rewrites",
-                'value' => 'on'
-            ),
-            // Opportunistic Encryption
-            'opportunistic_encryption' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/opportunistic_encryption",
-                'value' => 'on'
-            ),
-            // IP Geolocation
-            'ip_geolocation' => array(
-                'endpoint' => "zones/{$this->zone_id}/settings/ip_geolocation",
-                'value' => 'on'
-            )
-        );
-
-        foreach ($settings as $setting_name => $config) {
-            $body = json_encode(array('value' => $config['value']));
-            $response = $this->make_api_request($config['endpoint'], 'PATCH', $body);
-            
-            if (is_wp_error($response)) {
-                $results[$setting_name] = array(
-                    'success' => false,
-                    'error' => $response->get_error_message()
-                );
-            } else {
-                $results[$setting_name] = array(
-                    'success' => true,
-                    'data' => $response
-                );
-            }
-        }
-
-        return $results;
     }
 
     /**
@@ -282,66 +103,6 @@ class Illios_Cache_Cloudflare_Handler {
         }
 
         return $results;
-    }
-
-    /**
-     * Purge cache by tags (if using Enterprise features)
-     */
-    // public function purge_by_tags($tags) {
-    //     if (!$this->is_enabled()) {
-    //         return new WP_Error('cloudflare_disabled', 'Cloudflare purging is not enabled or configured');
-    //     }
-
-    //     if (empty($tags) || !is_array($tags)) {
-    //         return new WP_Error('invalid_tags', 'Tags must be provided as an array');
-    //     }
-
-    //     $endpoint = "zones/{$this->zone_id}/purge_cache";
-    //     $body = json_encode(array('tags' => $tags));
-
-    //     $response = $this->make_api_request($endpoint, 'POST', $body);
-
-    //     if (is_wp_error($response)) {
-    //         error_log('Cloudflare purge by tags failed: ' . $response->get_error_message());
-    //         return $response;
-    //     }
-
-    //     return $response;
-    // }
-
-    /**
-     * Verify API credentials and zone access
-     */
-    public function verify_credentials() {
-        if (empty($this->api_token) || empty($this->zone_id)) {
-            return new WP_Error('missing_credentials', 'API token and Zone ID are required');
-        }
-
-        // First verify the token itself
-        $endpoint = "user/tokens/verify";
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        if (!isset($response['success']) || $response['success'] !== true) {
-            return new WP_Error('invalid_token', 'Invalid API token');
-        }
-
-        // Then verify zone access
-        $endpoint = "zones/{$this->zone_id}";
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        if (isset($response['success']) && $response['success'] === true) {
-            return true;
-        }
-
-        return new WP_Error('invalid_zone', 'Invalid Zone ID or insufficient permissions');
     }
 
     /**
@@ -440,59 +201,6 @@ class Illios_Cache_Cloudflare_Handler {
         }
         
         return array();
-    }
-
-    public function can_enable_apo() {
-        if (!$this->is_enabled()) {
-            return false;
-        }
-
-        $endpoint = "zones/{$this->zone_id}/settings/automatic_platform_optimization";
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            error_log('APO availability check failed: ' . $response->get_error_message());
-            return false;
-        }
-
-        // If the setting exists and is not read-only, APO is available
-        if (isset($response['result'])) {
-            // Check if there's an error indicating APO is not available
-            if (isset($response['errors']) && !empty($response['errors'])) {
-                foreach ($response['errors'] as $error) {
-                    if (strpos($error['message'], 'not available') !== false || 
-                        strpos($error['message'], 'not entitled') !== false) {
-                        return false;
-                    }
-                }
-            }
-            
-            // If we get a result object, APO is available
-            return isset($response['result']['value']) || isset($response['result']['id']);
-        }
-
-        return false;
-    }
-
-    public function get_account_plan() {
-        if (!$this->is_enabled()) {
-            return null;
-        }
-
-        // Get zone details which includes the plan
-        $endpoint = "zones/{$this->zone_id}";
-        $response = $this->make_api_request($endpoint, 'GET');
-
-        if (is_wp_error($response)) {
-            return null;
-        }
-
-        // Plan is in the zone details
-        if (isset($response['result']['plan']['name'])) {
-            return strtolower($response['result']['plan']['name']);
-        }
-
-        return null;
     }
 
     /**

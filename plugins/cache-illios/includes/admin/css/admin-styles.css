@@ -138,36 +138,6 @@ textarea[disabled] {
     cursor: default;
 }
 
-/* Advanced controls styling */
-.cloudflare-advanced-btn {
-    margin-top: 10px;
-    margin-right: 10px;
-}
-
-/* Field-specific classes for dynamic styling */
-.cloudflare-field[disabled],
-.varnish-field[disabled],
-.apo-field[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Global Dev Mode Status Display */
-#global-dev-mode-status {
-    display: none;
-    border-left: 4px solid #d63638;
-    background: #fff3cd;
-    color: #856404;
-    padding: 8px 12px;
-    margin: 10px 0;
-    border-radius: 4px;
-}
-
-#global-dev-mode-info {
-    font-size: 0.95em;
-    margin: 0;
-}
-
 /* Sticky Notification Container */
 .sticky-notice-container {
     position: fixed;
@@ -351,11 +321,6 @@ span[style*="font-size: 1.2em"] {
 .illios-section .form-table {
     margin-top: 0;
     background: transparent;
-}
-
-.varnish-advanced-btn {
-    margin-top: 10px;
-    margin-right: 10px;
 }
 
 /* Responsive adjustments for sticky notices */
